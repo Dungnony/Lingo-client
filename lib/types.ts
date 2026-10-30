@@ -1,0 +1,746 @@
+export interface Me {
+  id: string;
+  email: string;
+  displayName: string;
+  avatarUrl: string | null;
+  timezone: string;
+  locale: string;
+  role: string;
+  emailVerifiedAt: string | null;
+  hasPassword: boolean;
+  settings?: UserSettings | null;
+  streak?: { currentStreak: number; longestStreak: number } | null;
+}
+
+export interface UserSettings {
+  dailyGoalType: "WORDS" | "MINUTES";
+  dailyGoalValue: number;
+  newCardsPerDay: number;
+  maxReviewsPerDay: number | null;
+  srsScheduler: "sm2" | "fsrs";
+  targetRetention: number;
+  reminderHour: number | null;
+  weeklyDigestEnabled: boolean;
+  showPhonetics: boolean;
+  showVietnamese: boolean;
+}
+
+export interface EnglishLevel {
+  level: number;
+  band: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+  nameVi: string;
+  nameEn: string;
+  totalWords: number;
+  totalGrammar: number;
+  description: string;
+  wordsInDb: number;
+}
+
+export interface Word {
+  id: string;
+  word: string;
+  pronunciation: string | null;
+  level: number;
+  pos: string[];
+  frequencyRank: number | null;
+  meaningVi: string | null;
+  meaningEn: string | null;
+  audioUrl: string | null;
+  lessonId?: string | null;
+  lessonOrder?: number | null;
+  examples?: WordExample[];
+  progressState?: string;
+}
+
+export interface LessonNode {
+  id: string;
+  orderIndex: number;
+  title: string;
+  wordCount: number;
+  learnedWords: number;
+  startedWords: number;
+  dueWords: number;
+  status: "COMPLETED" | "IN_PROGRESS" | "AVAILABLE" | "LOCKED";
+  previewWords: string[];
+}
+
+export interface LearnPath {
+  level: number;
+  levelName: string;
+  band: string;
+  totalLessons: number;
+  completedLessons: number;
+  currentLessonId: string | null;
+  lessons: LessonNode[];
+  levels: number[];
+}
+
+export interface LessonDetail {
+  lesson: {
+    id: string;
+    title: string;
+    orderIndex: number;
+    level: number;
+    wordCount: number;
+  };
+  words: Word[];
+}
+
+export interface WordExample {
+  id: string;
+  en: string;
+  vi: string | null;
+}
+
+export interface Paginated<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+/** saved = words the user bookmarked; difficult = words often forgotten in SRS. */
+export type NotebookTab = "saved" | "difficult";
+
+export interface NotebookWord extends Word {
+  /** Only on the "saved" tab. */
+  savedAt?: string;
+  /** Only on the "difficult" tab: times forgotten after being learned. */
+  lapses?: number;
+}
+
+export interface QueueItem {
+  progressId?: string;
+  state: string;
+  dueAt?: string;
+  word: Word;
+}
+
+export interface StudyQueue {
+  due: QueueItem[];
+  newCards: QueueItem[];
+  counts: {
+    due: number;
+    newRemaining: number;
+    newDoneToday: number;
+    reviewsDoneToday: number;
+  };
+}
+
+export interface StudyStats {
+  dueNow: number;
+  learnedTotal: number;
+  inProgress: number;
+  reviewsDoneToday: number;
+  newDoneToday: number;
+  newRemaining: number;
+}
+
+export type Rating = "AGAIN" | "HARD" | "GOOD" | "EASY";
+
+export interface ReviewResult {
+  isCorrect: boolean;
+  dueAt: string;
+  intervalDays: number;
+  state: string;
+}
+
+export interface StreakInfo {
+  currentStreak: number;
+  longestStreak: number;
+  streakFreezeCount: number;
+  lastActiveLocalDate: string | null;
+  activeToday: boolean;
+  goal: {
+    type: "WORDS" | "MINUTES";
+    value: number;
+    progress: number;
+    met: boolean;
+  };
+}
+
+export interface DayActivity {
+  date: string | null;
+  wordsReviewed: number;
+  minutesStudied: number;
+  goalMet: boolean;
+}
+
+export interface LevelBucket {
+  level: number;
+  band: string;
+  nameVi: string;
+  totalWords: number;
+  learned: number;
+  learning: number;
+  due: number;
+  atRisk: number;
+  notStarted: number;
+  percentComplete: number;
+}
+
+export interface ProgressOverview {
+  levels: LevelBucket[];
+  totals: Omit<LevelBucket, "level" | "band" | "nameVi">;
+}
+
+export interface Achievement {
+  id: string;
+  code: string;
+  nameVi: string;
+  descriptionVi: string;
+  category: string;
+  threshold: number;
+  unlocked: boolean;
+  unlockedAt: string | null;
+  progressCurrent: number;
+  progressTarget: number;
+}
+
+export interface QuizQuestion {
+  wordId: string;
+  mode: "reading" | "listening";
+  prompt: string;
+  pronunciation: string | null;
+  audioUrl?: string | null;
+  options: string[];
+  answer: string;
+}
+
+export interface Quiz {
+  attemptId: string;
+  questions: QuizQuestion[];
+}
+
+export interface QuizAttemptSummary {
+  id: string;
+  completedAt: string | null;
+  totalQuestions: number;
+  correctCount: number;
+  scorePct: number;
+}
+
+export type VideoKind =
+  | "PODCAST"
+  | "STORY"
+  | "SONG"
+  | "DIALOGUE"
+  | "LESSON"
+  | "NEWS"
+  | "CLIP"
+  | "OTHER";
+
+export interface VideoCard {
+  id: string;
+  youtubeId: string;
+  title: string;
+  titleEn: string | null;
+  description: string | null;
+  level: number | null;
+  kind: VideoKind;
+  sentenceCount: number;
+  thumbnailUrl: string | null;
+  author: string | null;
+  isFree: boolean;
+  isOwner: boolean;
+  progressPct: number;
+  completed: boolean;
+  likeCount: number;
+  likedByMe: boolean;
+}
+
+export interface VideoLine {
+  id: string;
+  index: number;
+  startMs: number | null;
+  en: string;
+  phonetic: string | null;
+  vi: string | null;
+}
+
+export interface VideoDetail {
+  id: string;
+  youtubeId: string;
+  title: string;
+  titleEn: string | null;
+  description: string | null;
+  level: number | null;
+  kind: VideoKind;
+  sentenceCount: number;
+  author: string | null;
+  isOwner: boolean;
+  lines: VideoLine[];
+  progress: { lastLineIndex: number; linesRead: number; completed: boolean };
+  likeCount: number;
+  likedByMe: boolean;
+  commentCount: number;
+}
+
+export interface CommentAuthor {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+export interface VideoComment {
+  id: string;
+  content: string;
+  parentId: string | null;
+  createdAt: string;
+  user: CommentAuthor;
+  replies: VideoComment[];
+}
+
+export type NotificationType =
+  | "COMMENT_REPLY"
+  | "VIDEO_COMMENT"
+  | "VIDEO_LIKE"
+  | "NEW_FOLLOWER"
+  | "ACHIEVEMENT_UNLOCKED";
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  readAt: string | null;
+  createdAt: string;
+  actor: CommentAuthor | null;
+  video: { id: string; title: string } | null;
+  comment: { id: string; content: string } | null;
+  achievement: { code: string; nameVi: string; descriptionVi: string } | null;
+}
+
+export interface NotificationsPage extends Paginated<AppNotification> {
+  unreadCount: number;
+}
+
+export type PracticeSkill = "LISTENING" | "PRONUNCIATION" | "WRITING";
+
+export interface PracticeStats {
+  totalAttempts: number;
+  distinctWordsCount: number;
+  /** null với PRONUNCIATION — chưa có chấm điểm tự động. */
+  correctCount: number | null;
+  accuracyPct: number | null;
+}
+
+export interface GrammarLevel {
+  level: number;
+  count: number;
+}
+
+export interface GrammarListItem {
+  slug: string;
+  level: number;
+  titleVi: string;
+  titleEn: string;
+  summaryVi: string;
+  flat?: boolean;
+}
+
+export interface GrammarExample {
+  en: string;
+  vi: string;
+}
+
+export interface GrammarDetail extends GrammarListItem {
+  orderIndex: number;
+  explanationVi: string;
+  patterns: string[];
+  examples: GrammarExample[];
+}
+
+/** Admin API shapes (`/admin/*`, admin role only). */
+export type WordReportReason = "MEANING" | "PRONUNCIATION" | "EXAMPLE" | "OTHER";
+
+export interface AdminWordReport {
+  id: string;
+  reason: WordReportReason;
+  note: string | null;
+  createdAt: string;
+  user: { displayName: string };
+}
+
+export interface AdminWord extends Word {
+  /** At most the first example. */
+  examples: WordExample[];
+  /** When an admin approved the AI-generated content; null = not yet. */
+  reviewedAt: string | null;
+  /** Why the AI cross-check doubts this word; null = no doubt / not checked. */
+  aiFlag: string | null;
+  /** The most recent open learner reports. */
+  reports: AdminWordReport[];
+  _count: { reports: number };
+}
+
+export interface AdminWordStats {
+  total: number;
+  reviewed: number;
+  /** Words with at least one open report. */
+  reported: number;
+  /** Words the AI cross-check doubts. */
+  aiFlagged: number;
+}
+
+/** "reported" = open learner reports; "aiFlagged" = doubted by the AI check. */
+export type AdminWordFilter =
+  | "all"
+  | "unreviewed"
+  | "reviewed"
+  | "reported"
+  | "aiFlagged";
+
+export interface AdminGrammarPoint extends GrammarDetail {
+  id: string;
+}
+
+export type AdminGrammarInput = Omit<
+  AdminGrammarPoint,
+  "id" | "orderIndex" | "flat"
+>;
+
+export interface AdminVideo {
+  id: string;
+  youtubeId: string;
+  title: string;
+  titleEn: string | null;
+  level: number | null;
+  kind: VideoKind;
+  createdAt: string;
+  createdBy: { id: string; displayName: string } | null;
+}
+
+export interface ExamAttempt {
+  id: string;
+  level: number;
+  totalCount: number;
+  correctCount: number;
+  durationSec: number | null;
+  createdAt: string;
+}
+
+export interface ExamHistory {
+  attempts: ExamAttempt[];
+  summary: {
+    count: number;
+    avgAccuracy: number | null;
+    best: { level: number; correctCount: number; totalCount: number } | null;
+  };
+}
+
+export type LeaderboardMetricKey =
+  | "learned"
+  | "streak"
+  | "longest"
+  | "lessons"
+  | "elo";
+
+export interface LeaderboardMetric {
+  key: LeaderboardMetricKey;
+  label: string;
+  unit: string;
+}
+
+export interface LeaderboardRow {
+  rank: number;
+  userId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  value: number;
+  currentStreak: number;
+  isMe: boolean;
+  isFollowing: boolean;
+  /** chỉ có khi metric = "elo" */
+  tier?: string;
+  tierColor?: string;
+}
+
+export interface Leaderboard {
+  metric: LeaderboardMetricKey;
+  label: string;
+  unit: string;
+  rows: LeaderboardRow[];
+  me: { rank: number | null; value: number; totalRanked: number };
+}
+
+export interface PublicProfileAchievement {
+  code: string;
+  nameVi: string;
+  descriptionVi: string;
+  unlockedAt: string;
+}
+
+export interface PublicProfileUser {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+export interface PublicProfile {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+  joinedAt: string;
+  currentStreak: number;
+  longestStreak: number;
+  learnedWordsCount: number;
+  completedLessonsCount: number;
+  achievements: PublicProfileAchievement[];
+  followerCount: number;
+  followingCount: number;
+  isFollowing: boolean;
+  isMe: boolean;
+  followers: PublicProfileUser[];
+  following: PublicProfileUser[];
+}
+
+export interface UserSearchResult {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+  currentStreak: number;
+  isFollowing: boolean;
+}
+
+export type OnboardingGoal =
+  | "TRAVEL"
+  | "WORK"
+  | "EXAM"
+  | "ACADEMIC"
+  | "ENTERTAINMENT"
+  | "INTEREST"
+  | "OTHER";
+
+export interface OnboardingProfile {
+  userId: string;
+  hasStudiedBefore: boolean;
+  selfAssessedLevel: number | null;
+  goal: OnboardingGoal;
+  plansToTakeExam: boolean;
+  targetLevel: number | null;
+  targetDate: string | null;
+  recommendedLevel: number;
+  recommendationVi: string;
+  completedAt: string;
+}
+
+export interface SubmitOnboardingInput {
+  hasStudiedBefore: boolean;
+  selfAssessedLevel?: number;
+  goal: OnboardingGoal;
+  plansToTakeExam: boolean;
+  targetLevel?: number;
+  targetDate?: string;
+}
+
+export type ChatRole = "USER" | "MODEL";
+
+/** Trợ lý AI chỉ ĐƯA RA đường dẫn (qua tool-calling phía server), không tự
+ * chuyển trang — client hiện nút bấm, người dùng tự bấm mới điều hướng. */
+export interface AssistantAction {
+  type: "navigate";
+  path: string;
+  label: string;
+}
+
+export interface AssistantMessage {
+  id: string;
+  role: ChatRole;
+  text: string;
+  createdAt: string;
+}
+
+export interface AssistantSession {
+  id: string;
+  title: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DirectMessage {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  content: string;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface ConversationSummary {
+  id: string;
+  updatedAt: string;
+  otherUser: PublicProfileUser;
+  lastMessage: { content: string; createdAt: string; mine: boolean } | null;
+  unreadCount: number;
+}
+
+export interface ReferralStats {
+  totalReferred: number;
+  rewardedCount: number;
+  pendingCount: number;
+}
+
+/** TRANSLATE = "Dịch tốc độ" (từ tiếng Anh → nghĩa), LISTENING = "Nghe đoán từ"
+ * (nghe phát âm → nghĩa), MATCH = "Ghép cặp" (lật thẻ tìm đúng cặp) — 3 chế
+ * độ, TRANSLATE/LISTENING dùng chung engine trắc nghiệm ở server, MATCH có
+ * response shape riêng (`cards` thay vì `questions`). */
+export type GameMode = "TRANSLATE" | "LISTENING" | "MATCH";
+
+export interface MinigameQuestion {
+  wordId: string;
+  prompt: string;
+  pronunciation: string | null;
+  audioUrl: string | null;
+  options: string[];
+}
+
+/** 1 thẻ trong minigame "Ghép cặp" — `wordId` trùng nhau giữa 2 thẻ nghĩa
+ * là 1 cặp đúng, tự so khớp được ngay ở client (không cần giấu, khác
+ * `correctIndex` của 2 mode trắc nghiệm). */
+export interface MatchCard {
+  cardId: string;
+  wordId: string;
+  kind: "word" | "meaning";
+  content: string;
+}
+
+export interface MinigameStartResponse {
+  sessionId: string;
+  mode: GameMode;
+  /** có khi mode = TRANSLATE | LISTENING */
+  questions?: MinigameQuestion[];
+  /** có khi mode = MATCH */
+  cards?: MatchCard[];
+}
+
+export interface MinigameResult {
+  score: number;
+  totalAsked: number;
+  coinsEarned: number;
+  balance: number;
+}
+
+export interface MinigameLeaderboardRow {
+  rank: number;
+  userId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  score: number;
+  totalAsked: number;
+  durationMs: number;
+}
+
+export interface WalletBalance {
+  balance: number;
+}
+
+export interface CoinTransaction {
+  id: string;
+  userId: string;
+  amount: number;
+  reason: string;
+  createdAt: string;
+}
+
+export interface DuelOpponent {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+export interface DuelMatched {
+  matchId: string;
+  opponent: DuelOpponent;
+  totalRounds: number;
+  /** ms nghỉ trước câu hỏi đầu tiên — FE dùng để chạy đếm ngược màn "VS". */
+  introMs: number;
+}
+
+export interface DuelRoundQuestion {
+  wordId: string;
+  prompt: string;
+  pronunciation: string | null;
+  options: string[];
+}
+
+export interface DuelRoundPayload {
+  matchId: string;
+  round: number;
+  totalRounds: number;
+  question: DuelRoundQuestion;
+  deadlineMs: number;
+}
+
+export interface DuelRoundResult {
+  matchId: string;
+  round: number;
+  correctIndex: number;
+  scores: Record<string, number>;
+}
+
+export interface DuelFinished {
+  matchId: string;
+  opponent: DuelOpponent;
+  myScore: number;
+  opponentScore: number;
+  winnerId: string | null;
+  /** khác null nếu trận kết thúc sớm do 1 bên rớt mạng quá lâu. */
+  forfeitedBy: "me" | "opponent" | null;
+  eloChange: number;
+  newElo: number;
+}
+
+export interface DuelRatingStats {
+  elo: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  tier: string;
+  tierColor: string;
+}
+
+export interface DuelLeaderboardRow {
+  rank: number;
+  userId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  elo: number;
+  tier: string;
+  tierColor: string;
+  wins: number;
+  losses: number;
+  draws: number;
+}
+
+export interface DuelSeasonInfo {
+  number: number;
+  startedAt: string;
+  endsAt: string;
+  daysRemaining: number;
+}
+
+export interface RankTierInfo {
+  name: string;
+  min: number;
+  color: string;
+}
+
+/** Bảng ngưỡng rank + luật riêng của Thách Đấu (giới hạn số lượng, xem
+ * `GET /duel/rank-tiers`) — nguồn dữ liệu DUY NHẤT cho bảng chú giải rank,
+ * tránh chép tay lại ngưỡng ELO ở client. */
+export interface RankTiersInfo {
+  tiers: RankTierInfo[];
+  challengerTopN: number;
+}
+
+/** Trận ĐANG DIỄN RA của mình, nếu có — dùng để tự phục hồi UI khi mở lại
+ * trang giữa 1 trận (xem `GET /duel/active`). */
+export interface DuelActiveMatch {
+  matchId: string;
+  opponent: DuelOpponent;
+  totalRounds: number;
+  round: number;
+  scores: Record<string, number>;
+  question: DuelRoundQuestion | null;
+  myAnswered: boolean;
+}
