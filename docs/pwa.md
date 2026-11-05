@@ -48,15 +48,10 @@ Khi sửa tài nguyên offline, tăng hậu tố `CACHE_NAME` trong `public/sw.j
 
 Runtime kiểm tra worker lúc đăng ký và khi quay lại tab có mạng. Worker mới không gọi `skipWaiting` trong bước cài; người dùng hoàn tất bài, lưu thay đổi rồi bấm **Cập nhật và mở lại** trong thẻ cài. Nếu chưa bấm, worker có thể tự kích hoạt theo vòng đời trình duyệt khi mọi tab dùng bản cũ đã đóng. Không có thao tác tải lại bắt buộc trên các tab khác.
 
-## Kiểm tra đã thực hiện
+## Kiểm tra
 
-- `npm run test:pwa` (nằm trong `npm test`): đạt 12/12; kiểm tra phạm vi cache, API/POST/RSC, lỗi xác thực, offline fallback, kích hoạt, thông điệp cập nhật, và hiển thị/điều hướng thông báo đẩy (`push`, `notificationclick`).
-- `npm run build`: thành công, gồm kiểm tra TypeScript và tạo các route `/install`, `/manifest.webmanifest`.
-- `npm run lint`: 0 lỗi; còn 3 cảnh báo có sẵn ở trang xác minh email, avatar và auth context.
-- Chrome chạy bản production local với hồ sơ riêng: không có lỗi installability; manifest và icon trả 200, lời mời cài thật xuất hiện, header worker đúng.
-- Màn rộng và viewport 390 px: trang cài và màn offline không tràn ngang. Khi offline, API lỗi mạng, tải `/account` trả fallback với logo đầy đủ; bật mạng và bấm thử lại đi về đăng nhập theo luồng xác thực.
-- Kiểm tra bản worker mới với hai tab: không tự tải lại khi phát hiện cập nhật; tab bấm cập nhật tải lại; nội dung email đang nhập ở tab đăng nhập giữ nguyên.
+`npm run test:pwa` (nằm trong `npm test`) kiểm tra phạm vi cache, API/POST/RSC, lỗi xác thực, offline fallback, kích hoạt, thông điệp cập nhật, và hiển thị/điều hướng thông báo đẩy (`push`, `notificationclick`). Bài kiểm tra dùng mô phỏng API trình duyệt trong bộ kiểm thử, không đưa mock data vào ứng dụng.
 
-Chưa kiểm tra cài lên màn hình chính của iPhone/Android thật hoặc phiên học có backend. Kiểm tra Chrome ở trên xác nhận điều kiện cài và lời mời cài, chưa thực hiện cài ứng dụng vào hệ điều hành. Bài kiểm tra worker dùng mô phỏng API trình duyệt trong bộ kiểm thử, không đưa mock data vào ứng dụng. Tương tự, thẻ thông báo đẩy mới thêm đã kiểm tra qua API backend (đăng ký/gửi thử/huỷ qua `curl`) và test đơn vị cho `push`/`notificationclick` trong `sw.js`, nhưng CHƯA xin quyền thông báo thật và nhận push trên trình duyệt/thiết bị thật — cần người dùng bấm **Bật thông báo** ở `/settings` trên bản production rồi thử **Gửi thử** để xác nhận notification thật sự hiện ra.
+Chưa ghi nhận việc kiểm tra trên trình duyệt hoặc thiết bị thật của bản hiện tại: cài lên màn hình chính iPhone/Android, lời mời cài, màn offline, cập nhật worker và nhận thông báo đẩy thật. Để xác nhận thông báo đẩy, bấm **Bật thông báo** ở `/settings` trên bản production rồi thử **Gửi thử**.
 
 Để kiểm tra thủ công: mở `/install` ở bản production, xem Application → Manifest và Service Workers trong DevTools; chuyển Network sang Offline rồi tải lại một URL nội bộ. Bật mạng, bấm **Thử kết nối lại**. Với cập nhật, mở hai tab, thay phiên bản worker và bấm Update trong DevTools của môi trường thử nghiệm; nút cập nhật xuất hiện trong thẻ cài. Kiểm tra tab còn lại giữ nội dung đang nhập.

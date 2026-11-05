@@ -38,6 +38,7 @@ Mọi yêu cầu API dùng `lib/api.ts`, cookie phiên và cơ chế refresh tok
 - **Quản trị**: mục "Quản trị nội dung" trên sidebar chỉ hiện với role `admin`, nhưng bảo vệ thật nằm ở server. Cấp quyền bằng `npm run user:set-role -- <email> admin` trong server. `npm run db:seed` ghi đè lại các điểm ngữ pháp có sẵn; `SEED_RESET=true` xoá mọi sửa đổi từ vựng.
 - **Kiểm tra**: là quiz từ vựng, không phải đề IELTS/TOEIC. Tạo câu hỏi từ nhóm tối đa 24 từ của cấp đang chọn. Chỉ hoàn tất khi `/quiz/submit` trả điểm hợp lệ; nộp lỗi giữ đáp án để thử lại.
 - **Video**: chỉ lấy được bản chép tự động từ video có phụ đề (CC) tiếng Anh; không seed sẵn video nào.
+- **Kiểm thử giao diện**: chưa có test tự động cho giao diện. Sổ tay, chấm phát âm và trang quản trị mới được thử API bằng request thật, chưa ghi nhận việc bấm thử giao diện trên trình duyệt.
 
 ## Thương hiệu và hình ảnh
 

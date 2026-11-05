@@ -6,7 +6,7 @@ flashcards, follow topic-based lessons, practise listening, dictation and pronun
 an AI study assistant when they get stuck.
 
 > This repository is the web client. The API lives in
-> [Lingo-sever](https://github.com/Dungnony/Lingo-sever).
+> [Lingo-server](https://github.com/Dungnony/Lingo-server).
 
 ## Screenshots
 
@@ -58,7 +58,7 @@ an AI study assistant when they get stuck.
 ```mermaid
 flowchart LR
     Browser["Browser<br/>Next.js 16 · React 19"]
-    subgraph Server["Lingo-sever · NestJS 11"]
+    subgraph Server["Lingo-server · NestJS 11"]
         REST["REST API<br/>/api/*"]
         WS["Socket.IO gateway<br/>/notifications"]
         SSE["SSE stream<br/>AI assistant"]
@@ -86,11 +86,11 @@ flowchart LR
 - **Client** (`Lingo-client`, this repo): Next.js App Router, SWR for data fetching, auth state
   in React Context, every request goes through `lib/api.ts`, which retries once after refreshing
   an expired token.
-- **Server** (`Lingo-sever`): one NestJS module per domain (auth, vocabulary, srs, grammar,
+- **Server** (`Lingo-server`): one NestJS module per domain (auth, vocabulary, srs, grammar,
   practice, notebook, assistant, admin, …). Input is validated with `class-validator`,
   environment variables with `zod` at startup, and a global JWT guard protects every route
   unless it is marked `@Public()`.
-- **Data pipeline** (`Lingo-sever/scripts/import`): downloads CEFR word lists, uses Gemini to
+- **Data pipeline** (`Lingo-server/scripts/import`): downloads CEFR word lists, uses Gemini to
   add IPA, Vietnamese meanings and examples (resumable, cached), then builds the seed file.
 
 ## Tech stack
@@ -108,15 +108,15 @@ flowchart LR
 ### Prerequisites
 
 - Node.js 22
-- PostgreSQL (developed on 16), or Docker using `Lingo-sever/docker-compose.yml`
+- PostgreSQL (developed on 16), or Docker using `Lingo-server/docker-compose.yml`
 - Optional: Redis, a [Gemini API key](https://aistudio.google.com/apikey) for word data and the
   AI assistant, a Google OAuth client ID for Google sign-in
 
 ### 1. Server
 
 ```bash
-git clone https://github.com/Dungnony/Lingo-sever.git
-cd Lingo-sever
+git clone https://github.com/Dungnony/Lingo-server.git
+cd Lingo-server
 cp .env.example .env          # set DATABASE_URL and the two JWT secrets
 docker compose up -d          # optional: Postgres on port 2222, Redis on port 2223
 npm install
@@ -145,7 +145,7 @@ npm run dev                   # http://localhost:3000
 ### 3. Optional: admin access
 
 ```bash
-cd Lingo-sever
+cd Lingo-server
 npm run user:set-role -- you@example.com admin
 ```
 
@@ -154,7 +154,7 @@ npm run user:set-role -- you@example.com admin
 Words ship with the seed. To rebuild them from the source word lists (needs `GEMINI_API_KEY`):
 
 ```bash
-cd Lingo-sever
+cd Lingo-server
 npm run data:fetch-sources
 npm run data:enrich-words     # resumable; results are cached
 npm run data:build-words
@@ -163,7 +163,7 @@ SEED_RESET=true npm run db:seed
 
 Without `GEMINI_API_KEY`, the AI assistant reports that it is disabled; the rest of the app keeps
 working. `data:enrich-words` only processes words that are still missing, so it can be re-run
-after the free Gemini quota resets. Details: `Lingo-sever/scripts/import/README.md`.
+after the free Gemini quota resets. Details: `Lingo-server/scripts/import/README.md`.
 
 > **Seeding and admin edits.** `npm run db:seed` only creates missing grammar points, so edits
 > made in `/admin` are kept; `SEED_GRAMMAR_OVERWRITE=true` rewrites them from the seed file.
@@ -196,7 +196,7 @@ start`). See [docs/pwa.md](docs/pwa.md).
 ## Project structure
 
 ```
-Lingo-sever/
+Lingo-server/
   src/modules/      one NestJS module per domain
   src/common/       decorators, guards, filters, level constants
   prisma/           schema, migrations, seed data
@@ -211,7 +211,7 @@ Lingo-client/
 ## Technical decisions
 
 - **Levels:** 6 levels mapped from CEFR (A1 → 1 … C2 → 6). Level constants live only in
-  `Lingo-sever/src/common/levels.ts` and its client counterpart `lib/levels.ts`.
+  `Lingo-server/src/common/levels.ts` and its client counterpart `lib/levels.ts`.
 - **Spaced repetition:** SM-2 by default; FSRS can be selected per user. Progress rows store the
   fields of both, so switching needs no migration.
 - **Auth:** HttpOnly cookies (`lingo_access`, `lingo_refresh`); refresh tokens rotate and token
@@ -233,4 +233,4 @@ Lingo-client/
 ## Data sources
 
 Word lists come from CEFR-J 1.5 (A1–B2) and Octanove C1/C2, licensed CC BY-SA 4.0. See
-`Lingo-sever/data/NOTICES.md` for attribution.
+`Lingo-server/data/NOTICES.md` for attribution.

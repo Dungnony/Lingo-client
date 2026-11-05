@@ -27,12 +27,3 @@ Giao diện được viết bằng các component, icon và token màu của app
 - `components/leaderboard.module.css`: kiểu dáng riêng cho bục, huy chương và bảng.
 
 Giữ `useRequireAuth()`, `useLeaderboard()` và `useLeaderboardMetrics()` hiện có. Hạng và thành tích lấy từ API; không tự tính lại thứ hạng trên client.
-
-## Kiểm tra
-
-- `npm run build`: thành công, bao gồm TypeScript và tạo route production.
-- `npm run lint`: không lỗi; còn 5 cảnh báo có sẵn ở các file ngoài phạm vi thay đổi. Lint riêng hai file TSX bảng xếp hạng không có cảnh báo.
-- `git diff --check`: đạt.
-- Chrome/Playwright: 320, 390, 768, 1024, 1366 và 1440px, đủ bốn tiêu chí; không tràn ngang hoặc lỗi JavaScript. Kiểm tra thêm giao diện sáng/tối, tên dài, một/hai người học, chưa xếp hạng, dữ liệu trống, lỗi và thử lại, skeleton và điều khiển bàn phím.
-
-Kiểm tra giao diện dùng API fixtures trong browser context riêng để tái hiện các trạng thái; không sửa xác thực ứng dụng hoặc dữ liệu backend. Chưa xác nhận luồng với phiên đăng nhập backend thật trong lần thay đổi này.

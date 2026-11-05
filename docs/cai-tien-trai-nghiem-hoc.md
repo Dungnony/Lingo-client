@@ -20,16 +20,3 @@
 | [SWR — Understanding SWR](https://swr.vercel.app/docs/advanced/understanding) | Dùng `keepPreviousData` cho video và lộ trình để giảm nhấp nháy khi đổi bộ lọc. |
 
 Đã đọc hướng dẫn Next.js đi kèm phiên bản đang cài: `template.js`, Server and Client Components và CSS trong `node_modules/next/dist/docs/`. Mã và minh họa CSS được viết riêng cho app; giữ API và cơ chế xác thực hiện có.
-
-## Kiểm tra
-
-- `npm run build`: thành công, gồm TypeScript và tạo các trang production.
-- `npm run lint`: không lỗi; còn 5 cảnh báo `set-state-in-effect` có sẵn ở các tệp ngoài phạm vi sửa.
-- `npm run test:pwa`: 12/12 kiểm tra đạt.
-- Chromium trên bản production: ba trang `/study`, `/learn`, `/watch` không tràn ngang tại 320, 390, 768, 1440 và 1920px; kiểm tra thêm giao diện tối và giảm chuyển động.
-- Lọc video chậm, kết quả rỗng, lỗi và thử lại; nền chọn bám đúng vị trí nút sau khi thay đổi kích thước.
-- Lật và đánh giá sáu thẻ bằng bàn phím; lỗi lưu giữ nguyên thẻ để thử lại, bấm nhanh không gửi trùng.
-- Điều khiển chặng lộ trình bằng bàn phím, giữ tab khi tải cấp mới, sidebar không bị tạo lại khi chuyển trang; menu mobile mở/đóng bằng Escape và trả focus về nút mở.
-- Kiểm tra hiển thị năm màn dùng thành phần chung: từ vựng, ngữ pháp, kiểm tra trình độ, luyện nghe và luyện phát âm; vào bài luyện rồi quay lại phần chọn bài. Bộ chọn cấp độ trên trang chủ giữ nguyên cấp đã chọn khi người dùng đang đọc.
-
-Các kiểm tra trình duyệt dùng API giả lập trong môi trường kiểm tra để tái hiện dữ liệu và lỗi có kiểm soát; không thay thế kiểm tra tích hợp với backend thật. Không thêm dữ liệu giả vào ứng dụng.
