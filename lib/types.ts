@@ -617,6 +617,7 @@ export interface MinigameResult {
   score: number;
   totalAsked: number;
   coinsEarned: number;
+  coinLimitReached: boolean;
   balance: number;
 }
 

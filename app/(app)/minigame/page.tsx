@@ -37,6 +37,8 @@ import type {
 } from "@/lib/types";
 
 const GAME_DURATION_MS = 60_000;
+const COIN_LIMIT_NOTE =
+  "Bạn đã đạt giới hạn xu minigame hôm nay. Điểm vẫn được tính vào bảng xếp hạng.";
 
 interface GameDef {
   mode: GameMode;
@@ -196,8 +198,7 @@ function SoloMinigame({ game }: { game: GameDef }) {
     setPhase("finished");
     if (!id) return;
     try {
-      const durationMs = Date.now() - startTimeRef.current;
-      const res = await finishMinigame(id, answersRef.current, durationMs);
+      const res = await finishMinigame(id, answersRef.current);
       setResult(res);
       void leaderboard.mutate();
     } catch {
@@ -351,6 +352,11 @@ function SoloMinigame({ game }: { game: GameDef }) {
                   +{result.coinsEarned} xu — số dư hiện tại:{" "}
                   {result.balance.toLocaleString("vi-VN")} xu
                 </p>
+                {result.coinLimitReached && (
+                  <p className="mt-1 text-xs text-muted">
+                    {COIN_LIMIT_NOTE}
+                  </p>
+                )}
                 <Button className="mt-5" onClick={() => setPhase("idle")}>
                   Chơi lại
                 </Button>
@@ -438,7 +444,7 @@ function MatchMinigame() {
     sessionIdRef.current = sessionId;
   }, [sessionId]);
 
-  async function finish(durationMs: number) {
+  async function finish() {
     if (finishedRef.current) return;
     finishedRef.current = true;
     if (timerRef.current) clearInterval(timerRef.current);
@@ -446,7 +452,7 @@ function MatchMinigame() {
     setPhase("finished");
     if (!id) return;
     try {
-      const res = await finishMatchMinigame(id, mistakesRef.current, durationMs);
+      const res = await finishMatchMinigame(id, mistakesRef.current);
       setResult(res);
       void leaderboard.mutate();
     } catch {
@@ -489,11 +495,11 @@ function MatchMinigame() {
 
   // Nộp bài khi đã ghép đủ mọi cặp — đặt trong effect (thay vì gọi thẳng
   // trong flipCard) để giống đúng cách SoloMinigame gọi finish() từ effect
-  // đếm giờ, tránh gọi Date.now() ngay trong luồng xử lý sự kiện lật thẻ.
+  // đếm giờ.
   useEffect(() => {
     if (phase !== "playing" || cards.length === 0) return;
     if (matchedWordIds.size === cards.length / 2) {
-      void finish(Date.now() - startTimeRef.current);
+      void finish();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchedWordIds, phase]);
@@ -625,6 +631,11 @@ function MatchMinigame() {
                   +{result.coinsEarned} xu — số dư hiện tại:{" "}
                   {result.balance.toLocaleString("vi-VN")} xu
                 </p>
+                {result.coinLimitReached && (
+                  <p className="mt-1 text-xs text-muted">
+                    {COIN_LIMIT_NOTE}
+                  </p>
+                )}
                 <Button className="mt-5" onClick={playAgain}>
                   Chơi lại
                 </Button>
