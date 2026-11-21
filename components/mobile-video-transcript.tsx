@@ -16,6 +16,8 @@ export function MobileVideoTranscript({
   onToggleTrans,
   onToggleCaption,
   onSelect,
+  onWordClick,
+  selectedWord,
 }: {
   lines: VideoLine[];
   active: number | null;
@@ -26,6 +28,8 @@ export function MobileVideoTranscript({
   onToggleTrans: () => void;
   onToggleCaption: () => void;
   onSelect: (index: number) => void;
+  onWordClick?: (word: string) => void;
+  selectedWord?: string | null;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
   const [following, setFollowing] = useState(true);
@@ -153,6 +157,8 @@ export function MobileVideoTranscript({
                 compact
                 showTrans={showTrans}
                 onSelect={() => select(line.index)}
+                onWordClick={onWordClick}
+                selectedWord={selectedWord}
               />
             ))
           )}

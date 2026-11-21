@@ -10,6 +10,7 @@ import { MobileVideoTranscript } from "@/components/mobile-video-transcript";
 import { TranscriptLine } from "@/components/transcript-line";
 import { Button, ErrorNote, Spinner } from "@/components/ui";
 import { VideoLikeButton } from "@/components/video-like-button";
+import { WordLookupPopover } from "@/components/word-lookup-popover";
 import { YoutubePlayer } from "@/components/youtube-player";
 import styles from "@/components/video-learning.module.css";
 import { api } from "@/lib/api";
@@ -77,6 +78,7 @@ export default function WatchDetailPage() {
   const [showCaption, setShowCaption] = useState(false);
   const [active, setActive] = useState<number | null>(null);
   const [readMax, setReadMax] = useState(0);
+  const [lookupWord, setLookupWord] = useState<string | null>(null);
   const seekRef = useRef<((s: number) => void) | null>(null);
   const workspaceRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -344,6 +346,8 @@ export default function WatchDetailPage() {
           onToggleTrans={() => setShowTrans((v) => !v)}
           onToggleCaption={() => setShowCaption((v) => !v)}
           onSelect={selectLine}
+          onWordClick={setLookupWord}
+          selectedWord={lookupWord}
         />
 
         <div className="panel hidden h-[72vh] flex-col overflow-hidden lg:flex">
@@ -405,6 +409,8 @@ export default function WatchDetailPage() {
                   active={active === l.index}
                   showTrans={showTrans}
                   onSelect={() => selectLine(l.index)}
+                  onWordClick={setLookupWord}
+                  selectedWord={lookupWord}
                 />
               ))}
               <div style={{ height: vpH / 2 }} />
@@ -436,6 +442,10 @@ export default function WatchDetailPage() {
           Xong
         </Button>
       </div>
+      <WordLookupPopover
+        word={lookupWord}
+        onClose={() => setLookupWord(null)}
+      />
     </div>
   );
 }

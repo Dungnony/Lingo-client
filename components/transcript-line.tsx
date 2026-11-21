@@ -1,5 +1,6 @@
 "use client";
 
+import { InteractiveEnglishText } from "@/components/word-lookup-popover";
 import type { VideoLine } from "@/lib/types";
 
 export function TranscriptLine({
@@ -7,12 +8,16 @@ export function TranscriptLine({
   active,
   showTrans,
   onSelect,
+  onWordClick,
+  selectedWord,
   compact = false,
 }: {
   line: VideoLine;
   active: boolean;
   showTrans: boolean;
   onSelect: () => void;
+  onWordClick?: (word: string) => void;
+  selectedWord?: string | null;
   compact?: boolean;
 }) {
   return (
@@ -57,7 +62,15 @@ export function TranscriptLine({
               compact || active ? "text-xl font-medium" : "text-lg"
             }`}
           >
-            {line.en}
+            {onWordClick ? (
+              <InteractiveEnglishText
+                text={line.en}
+                selectedWord={selectedWord}
+                onWordClick={onWordClick}
+              />
+            ) : (
+              line.en
+            )}
           </p>
           {showTrans && line.vi && (
             <p
