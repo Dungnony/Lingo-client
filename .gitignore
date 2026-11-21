@@ -37,6 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# editor
+/.vscode/
+
 # local assistant notes
 /CLAUDE.md
 
