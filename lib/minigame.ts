@@ -18,24 +18,17 @@ export function startMinigame(mode: GameMode = "TRANSLATE") {
 export function finishMinigame(
   sessionId: string,
   answers: { wordId: string; chosenIndex: number }[],
-  durationMs: number,
 ) {
   return api.post<MinigameResult>(`/minigame/${sessionId}/finish`, {
     answers,
-    durationMs,
   });
 }
 
 /** MATCH ("Ghép cặp") — không có `answers` trắc nghiệm, chỉ báo số lần lật
- * sai + thời gian, xem `finishMatchGame()` ở server. */
-export function finishMatchMinigame(
-  sessionId: string,
-  mistakes: number,
-  durationMs: number,
-) {
+ * sai; thời gian do server tự đo, xem `gradeMatch()` ở server. */
+export function finishMatchMinigame(sessionId: string, mistakes: number) {
   return api.post<MinigameResult>(`/minigame/${sessionId}/finish`, {
     mistakes,
-    durationMs,
   });
 }
 
