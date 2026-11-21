@@ -42,6 +42,7 @@ export default function SiteLayout({ children }: { children: ReactNode }) {
                 ["Cài ứng dụng Lingo", "/install"],
                 ["Câu hỏi thường gặp", "/#cau-hoi"],
                 ["Nguồn dữ liệu", "/nguon-du-lieu"],
+                ["Chính sách bảo mật", "/chinh-sach-bao-mat"],
               ],
             },
           ].map((group) => (
