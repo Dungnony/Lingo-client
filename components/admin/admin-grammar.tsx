@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Button, Card, EmptyState, ErrorNote, Spinner } from "@/components/ui";
 import { Icon } from "@/components/icon";
 import {
@@ -100,12 +99,9 @@ export function AdminGrammar() {
                   <p className="font-semibold">{point.titleVi}</p>
                   <p className="text-sm text-muted">
                     {levelLabel(point.level)} ·{" "}
-                    <Link
-                      href={`/grammar/${point.slug}`}
-                      className="underline"
-                    >
+                    <code className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-xs">
                       {point.slug}
-                    </Link>
+                    </code>
                   </p>
                 </div>
                 <div className="flex gap-2">

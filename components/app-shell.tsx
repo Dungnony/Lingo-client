@@ -135,7 +135,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           </div>
         </header>
-        <main className="flex-1">{children}</main>
+        <main id="main-content" className="flex-1">{children}</main>
         <footer className={`mt-auto border-t border-border px-6 py-4 text-[10px] text-muted ${styles.footer}`}>
           <span>Lingo · Mỗi ngày một chút, tiến xa hơn.</span>
         </footer>

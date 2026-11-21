@@ -95,7 +95,9 @@ export function NotificationBell() {
                       ? `/watch/${n.video.id}`
                       : n.type === "ACHIEVEMENT_UNLOCKED"
                         ? "/achievements"
-                        : "#"
+                        : n.type === "NEW_FOLLOWER" && n.actor
+                          ? `/u/${n.actor.id}`
+                          : "/dashboard"
                   }
                   onClick={() => onItemClick(n)}
                   className={`flex gap-3 border-b border-border px-4 py-3 text-sm last:border-0 hover:bg-surface-2 ${

@@ -5,7 +5,7 @@ import { InstallPrompt } from "@/components/pwa/install-prompt";
 export default function AppGroupLayout({ children }: { children: ReactNode }) {
   return (
     <AppShell>
-      <div id="main-content">{children}</div>
+      {children}
       <InstallPrompt />
     </AppShell>
   );

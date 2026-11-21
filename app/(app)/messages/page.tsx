@@ -387,7 +387,6 @@ function MessagesInner() {
   // Đang mở 1 hội thoại thì luôn ưu tiên hiện tab "chats" — chọn người ở
   // tab "connect" xong sẽ tự nhảy về đây (xem select()).
   const tab: Tab = activeId ? "chats" : params.get("tab") === "connect" ? "connect" : "chats";
-  useMessagesSocket(activeId);
 
   if (loading || !user) return <Spinner />;
 

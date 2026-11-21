@@ -95,6 +95,11 @@ export default function WatchDetailPage() {
     [data],
   );
 
+  // Reopening a video must not report fewer lines read than the server has.
+  useEffect(() => {
+    if (data) readRef.current = Math.max(readRef.current, data.progress.linesRead);
+  }, [data]);
+
   // Đổi tiêu đề tab trình duyệt theo tên video đang xem.
   useEffect(() => {
     if (!data) return;
