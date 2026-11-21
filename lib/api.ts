@@ -2,8 +2,13 @@
  * Lớp gọi API tập trung. Mọi request đều `credentials: 'include'` để gửi cookie phiên.
  * Tự động refresh access token 1 lần khi gặp 401.
  */
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL;
 export const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
+  !rawApiUrl || rawApiUrl === "https://lingo-server.onrender.com/api"
+    ? process.env.NODE_ENV === "production"
+      ? "https://lingo-server-4w6n.onrender.com/api"
+      : "http://localhost:8000/api"
+    : rawApiUrl;
 
 export class ApiError extends Error {
   status: number;
