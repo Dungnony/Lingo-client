@@ -124,10 +124,19 @@ export function WordLookupPopover({
               <p lang="en" className="word-display text-xl font-bold">
                 {data?.word ?? word}
               </p>
-              {data?.pos && (
-                <span className="rounded bg-surface-2 px-1.5 py-0.5 text-[11px] font-medium text-muted">
-                  {data.pos}
-                </span>
+              {data?.pos && data.pos.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {(Array.isArray(data.pos) ? data.pos : [data.pos])
+                    .slice(0, 3)
+                    .map((p) => (
+                      <span
+                        key={p}
+                        className="rounded bg-surface-2 px-1.5 py-0.5 text-[10px] font-medium text-muted"
+                      >
+                        {p}
+                      </span>
+                    ))}
+                </div>
               )}
               {data?.level && (
                 <span

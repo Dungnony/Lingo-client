@@ -68,13 +68,13 @@ export function Nav() {
             <>
               <Link
                 href="/login"
-                className="rounded-lg px-2.5 py-2.5 text-xs font-semibold text-muted transition-colors hover:text-primary sm:border sm:border-border sm:px-4 sm:hover:border-primary/40"
+                className="whitespace-nowrap rounded-lg px-2 py-2 text-xs font-semibold text-muted transition-colors hover:text-primary sm:border sm:border-border sm:px-4 sm:py-2.5 sm:hover:border-primary/40"
               >
                 Đăng nhập
               </Link>
               <Link
                 href="/onboarding"
-                className="motion-button rounded-lg bg-primary px-3 py-2.5 text-xs font-semibold text-primary-fg sm:px-4"
+                className="motion-button whitespace-nowrap rounded-lg bg-primary px-2.5 py-2 text-xs font-semibold text-primary-fg sm:px-4 sm:py-2.5"
               >
                 Bắt đầu ngay
               </Link>

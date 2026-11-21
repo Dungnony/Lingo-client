@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui";
 import { Icon, type IconName } from "@/components/icon";
 
@@ -54,11 +55,11 @@ export function FeatureTour({
   const step = steps[index];
   const isLast = index === steps.length - 1;
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-label="Hướng dẫn sử dụng"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4"
     >
       <div
         className="relative w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-2xl"
@@ -102,6 +103,7 @@ export function FeatureTour({
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

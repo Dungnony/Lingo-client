@@ -136,7 +136,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>
         <main id="main-content" className="flex-1">{children}</main>
-        <footer className={`mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-border px-6 py-4 text-[11px] text-muted ${styles.footer}`}>
+        <footer className={`mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-border px-6 py-4 pr-20 text-[11px] text-muted ${styles.footer}`}>
           <span>Lingo · Mỗi ngày một chút, tiến xa hơn.</span>
           <div className="flex items-center gap-4">
             <Link href="/ho-tro" className="hover:text-primary hover:underline">

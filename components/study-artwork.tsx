@@ -28,7 +28,7 @@ export function StudyArtwork() {
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                Level 4 · Upper-Intermediate (B2)
+                Level 5 · Upper-Intermediate
               </span>
               <span className="rounded bg-surface-2 px-1.5 py-0.5 text-[11px] font-medium text-muted">
                 noun

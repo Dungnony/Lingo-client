@@ -474,7 +474,7 @@ function ReferralCard({ userId }: { userId: string }) {
         <div>
           <h2 className="font-semibold">Mời bạn bè cùng học</h2>
           <p className="mt-1 text-sm leading-6 text-muted">
-            Khi bạn mời hoàn thành ngày học đầu tiên, cả hai đều nhận thêm 1
+            Khi người bạn mời hoàn thành ngày học đầu tiên, cả hai đều nhận thêm 1
             🧊 lá chắn giữ chuỗi ngày học.
           </p>
         </div>
