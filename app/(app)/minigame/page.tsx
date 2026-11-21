@@ -17,6 +17,7 @@ import {
   useDuelQueueSize,
   useDuelRating,
   useDuelSeason,
+  useDuelSeasonHistory,
   useDuelSocket,
   useRankTiers,
 } from "@/lib/duel";
@@ -1136,7 +1137,80 @@ function DuelMinigame() {
           )}
         </Card>
       </section>
+
+      <DuelSeasonHistorySection />
     </>
+  );
+}
+
+function DuelSeasonHistorySection() {
+  const { data } = useDuelSeasonHistory();
+  if (!data || data.length === 0) return null;
+
+  function formatSeasonLabel(num: number) {
+    const year = Math.floor(num / 100);
+    const month = num % 100;
+    return `Mùa tháng ${month}/${year}`;
+  }
+
+  return (
+    <section className="mt-8">
+      <SectionHeading
+        icon="trophy"
+        tone="accent"
+        title="Lịch sử các mùa giải trước"
+        className="mb-4"
+      />
+      <div className="space-y-4">
+        {data.map((season) => (
+          <Card key={season.number} className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2.5">
+              <span className="font-semibold">
+                {formatSeasonLabel(season.number)}
+              </span>
+              {season.me ? (
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                  Hạng của bạn: #{season.me.rank} · {season.me.tier} (
+                  {season.me.finalElo} ELO
+                  {season.me.coinsAwarded > 0
+                    ? ` · +${season.me.coinsAwarded} xu`
+                    : ""}
+                  )
+                </span>
+              ) : (
+                <span className="text-xs text-muted">
+                  Bạn chưa tham gia mùa này
+                </span>
+              )}
+            </div>
+            {season.topPlayers.length > 0 && (
+              <div className="divide-y divide-border text-sm">
+                {season.topPlayers.map((p) => (
+                  <div
+                    key={p.userId}
+                    className="flex items-center justify-between gap-2 py-2"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <span className="w-5 text-xs font-bold text-muted">
+                        #{p.rank}
+                      </span>
+                      <span className="font-medium">{p.displayName}</span>
+                      <span className="rounded bg-surface-2 px-1.5 py-0.5 text-xs text-muted">
+                        {p.tier}
+                      </span>
+                    </span>
+                    <span className="text-xs font-semibold text-primary">
+                      {p.finalElo} ELO
+                      {p.coinsAwarded > 0 ? ` · +${p.coinsAwarded} xu` : ""}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        ))}
+      </div>
+    </section>
   );
 }
 

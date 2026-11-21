@@ -13,6 +13,7 @@ import type {
   DuelRatingStats,
   DuelRoundPayload,
   DuelRoundResult,
+  DuelSeasonHistoryItem,
   DuelSeasonInfo,
   RankTiersInfo,
 } from "./types";
@@ -29,6 +30,10 @@ export function useDuelLeaderboard() {
 
 export function useDuelSeason() {
   return useSWR<DuelSeasonInfo>("/duel/season", fetcher);
+}
+
+export function useDuelSeasonHistory() {
+  return useSWR<DuelSeasonHistoryItem[]>("/duel/seasons/history", fetcher);
 }
 
 /** Bảng ngưỡng rank — tĩnh, gần như không đổi giữa các lần deploy, nên

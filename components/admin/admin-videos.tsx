@@ -91,8 +91,12 @@ function VideoRow({
     setError(null);
     setStatus(null);
     try {
-      // The API cannot unset a level, so only send one that was chosen.
-      await updateAdminVideo(video.id, { title, titleEn, kind, level });
+      await updateAdminVideo(video.id, {
+        title,
+        titleEn,
+        kind,
+        level: level ?? null,
+      });
       setStatus("Đã lưu");
       onChanged();
     } catch (err) {
@@ -149,7 +153,7 @@ function VideoRow({
           <Field label="Cấp độ">
             <LevelSelect
               value={level}
-              emptyLabel={level === undefined ? "Chưa đặt" : undefined}
+              emptyLabel="Chưa đặt"
               onChange={setLevel}
             />
           </Field>

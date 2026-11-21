@@ -19,7 +19,11 @@ import { api, ApiError } from "@/lib/api";
 import { useAuth, useRequireAuth } from "@/lib/auth";
 import { useReferralStats } from "@/lib/hooks";
 import { TIMEZONES } from "@/lib/timezones";
-import { buyStreakFreeze, useWallet } from "@/lib/wallet";
+import {
+  buyAssistantQuota,
+  buyStreakFreeze,
+  useWallet,
+} from "@/lib/wallet";
 
 export default function AccountPage() {
   const { user, loading, logout, refresh } = useRequireAuth();
@@ -352,13 +356,13 @@ function PasswordForm({
 
 function WalletCard() {
   const { data, mutate } = useWallet();
-  const [buying, setBuying] = useState(false);
+  const [buyingItem, setBuyingItem] = useState<"freeze" | "ai" | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  async function buy() {
-    if (buying) return;
-    setBuying(true);
+  async function buyFreeze() {
+    if (buyingItem) return;
+    setBuyingItem("freeze");
     setError("");
     setMessage("");
     try {
@@ -372,7 +376,29 @@ function WalletCard() {
           : "Chưa mua được, thử lại nhé.",
       );
     } finally {
-      setBuying(false);
+      setBuyingItem(null);
+    }
+  }
+
+  async function buyAiPack() {
+    if (buyingItem) return;
+    setBuyingItem("ai");
+    setError("");
+    setMessage("");
+    try {
+      const res = await buyAssistantQuota();
+      await mutate({ balance: res.balance }, { revalidate: false });
+      setMessage(
+        `Đã mở thêm +${res.addedQuestions} lượt hỏi Trợ lý AI hôm nay với ${res.price} xu!`,
+      );
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Chưa mua được, thử lại nhé.",
+      );
+    } finally {
+      setBuyingItem(null);
     }
   }
 
@@ -383,9 +409,9 @@ function WalletCard() {
           <Icon name="spark" />
         </span>
         <div>
-          <h2 className="font-semibold">Ví xu</h2>
+          <h2 className="font-semibold">Ví xu &amp; Cửa hàng</h2>
           <p className="mt-1 text-sm text-muted">
-            Kiếm xu qua minigame &quot;Dịch tốc độ&quot; và học đều mỗi ngày.
+            Kiếm xu qua minigame, đấu 1v1 và điểm danh học mỗi ngày.
           </p>
         </div>
       </div>
@@ -393,12 +419,41 @@ function WalletCard() {
         {(data?.balance ?? 0).toLocaleString("vi-VN")}
         <span className="ml-2 text-sm font-normal text-muted">xu</span>
       </p>
-      <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-border pt-4">
-        <Button variant="secondary" onClick={() => void buy()} disabled={buying}>
-          {buying ? "Đang mua…" : "Mua lá chắn streak (300 xu)"}
-        </Button>
-        <LinkButton href="/minigame" variant="ghost">
-          Chơi ngay <Icon name="arrow" size={16} />
+      <div className="mt-5 space-y-2.5 border-t border-border pt-4">
+        <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-surface-2/60 p-3">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold">🧊 Lá chắn giữ chuỗi</p>
+            <p className="text-[11px] text-muted">
+              Bảo vệ chuỗi ngày học khi lỡ quên 1 ngày
+            </p>
+          </div>
+          <Button
+            variant="secondary"
+            className="shrink-0 text-xs"
+            onClick={() => void buyFreeze()}
+            disabled={buyingItem !== null}
+          >
+            {buyingItem === "freeze" ? "Đang mua…" : "300 xu"}
+          </Button>
+        </div>
+        <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-surface-2/60 p-3">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold">🤖 +10 lượt hỏi Trợ lý AI</p>
+            <p className="text-[11px] text-muted">
+              Cộng thêm 10 câu hỏi AI ngay trong hôm nay
+            </p>
+          </div>
+          <Button
+            variant="secondary"
+            className="shrink-0 text-xs"
+            onClick={() => void buyAiPack()}
+            disabled={buyingItem !== null}
+          >
+            {buyingItem === "ai" ? "Đang mua…" : "100 xu"}
+          </Button>
+        </div>
+        <LinkButton href="/minigame" variant="ghost" className="w-full">
+          Chơi minigame kiếm xu <Icon name="arrow" size={16} />
         </LinkButton>
       </div>
       {message && <p className="mt-3 text-sm text-good">{message}</p>}

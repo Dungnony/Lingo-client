@@ -720,6 +720,35 @@ export interface DuelSeasonInfo {
   daysRemaining: number;
 }
 
+export interface DuelSeasonHistoryPlayer {
+  rank: number;
+  userId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  finalElo: number;
+  tier: string;
+  wins: number;
+  losses: number;
+  draws: number;
+  coinsAwarded: number;
+}
+
+export interface DuelSeasonHistoryItem {
+  number: number;
+  startedAt: string;
+  endedAt: string | null;
+  topPlayers: DuelSeasonHistoryPlayer[];
+  me: {
+    rank: number;
+    finalElo: number;
+    tier: string;
+    wins: number;
+    losses: number;
+    draws: number;
+    coinsAwarded: number;
+  } | null;
+}
+
 export interface RankTierInfo {
   name: string;
   min: number;

@@ -19,3 +19,11 @@ export function buyStreakFreeze() {
     "/wallet/buy/streak-freeze",
   );
 }
+
+export function buyAssistantQuota() {
+  return api.post<{
+    balance: number;
+    price: number;
+    addedQuestions: number;
+  }>("/wallet/buy/assistant-quota");
+}
