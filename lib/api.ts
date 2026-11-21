@@ -35,6 +35,22 @@ async function raw(path: string, opts: RequestOptions = {}): Promise<Response> {
   });
 }
 
+let refreshInFlight: Promise<boolean> | null = null;
+
+/**
+ * Concurrent 401s share one refresh: the server rotates refresh tokens and
+ * revokes the whole token family when a rotated one is reused, so parallel
+ * refreshes would log the user out.
+ */
+export function refreshSession(): Promise<boolean> {
+  refreshInFlight ??= raw("/auth/refresh", { method: "POST" })
+    .then((res) => res.ok)
+    .finally(() => {
+      refreshInFlight = null;
+    });
+  return refreshInFlight;
+}
+
 export async function apiFetch<T = unknown>(
   path: string,
   opts: RequestOptions = {},
@@ -46,8 +62,7 @@ export async function apiFetch<T = unknown>(
     !opts._retried &&
     !path.startsWith("/auth/")
   ) {
-    const refresh = await raw("/auth/refresh", { method: "POST" });
-    if (refresh.ok) {
+    if (await refreshSession()) {
       res = await raw(path, { ...opts, _retried: true });
     }
   }
@@ -96,11 +111,7 @@ async function apiUpload<T = unknown>(
     body: form,
   });
   if (res.status === 401) {
-    const r = await fetch(`${API_BASE}/auth/refresh`, {
-      method: "POST",
-      credentials: "include",
-    });
-    if (r.ok)
+    if (await refreshSession())
       res = await fetch(`${API_BASE}${path}`, {
         method: "POST",
         credentials: "include",

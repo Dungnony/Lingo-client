@@ -2,6 +2,10 @@
 
 import useSWR from "swr";
 import { api, apiFetch, API_BASE } from "./api";
+import {
+  openAssistantStream,
+  type AssistantStreamHandlers,
+} from "./assistant-stream";
 import type {
   Achievement,
   AdminGrammarInput,
@@ -10,7 +14,6 @@ import type {
   AdminWord,
   AdminWordFilter,
   AdminWordStats,
-  AssistantAction,
   AssistantMessage,
   AssistantSession,
   DayActivity,
@@ -402,47 +405,24 @@ export function createAssistantSession() {
 /**
  * Streaming qua SSE (`EventSource`) — trả từng đoạn chữ ngay khi có thay vì
  * đợi cả câu trả lời xong. Trả về hàm để đóng kết nối sớm (vd widget đóng
- * giữa chừng). `EventSource` không tự refresh token 401 như `apiFetch` —
- * chấp nhận được vì access token sống đủ lâu (mặc định 15 phút) so với 1
- * lượt hỏi, không đáng để xử lý riêng.
+ * giữa chừng).
  */
 export function streamAssistant(
   message: string,
   sessionId: string | undefined,
-  handlers: {
-    onDelta: (delta: string) => void;
-    onDone: (sessionId: string, action?: AssistantAction) => void;
-    onError: () => void;
-  },
+  handlers: AssistantStreamHandlers,
 ): () => void {
   const params = new URLSearchParams({ message });
   if (sessionId) params.set("sessionId", sessionId);
-  const es = new EventSource(`${API_BASE}/assistant/ask/stream?${params}`, {
-    withCredentials: true,
+  return openAssistantStream({
+    sessionId,
+    ensureSession: () => api.get("/assistant/status"),
+    createSource: () =>
+      new EventSource(`${API_BASE}/assistant/ask/stream?${params}`, {
+        withCredentials: true,
+      }),
+    handlers,
   });
-  es.onmessage = (event) => {
-    let payload: {
-      delta?: string;
-      done?: boolean;
-      sessionId?: string;
-      action?: AssistantAction;
-    };
-    try {
-      payload = JSON.parse(event.data);
-    } catch {
-      return;
-    }
-    if (payload.delta) handlers.onDelta(payload.delta);
-    if (payload.done) {
-      handlers.onDone(payload.sessionId ?? sessionId ?? "", payload.action);
-      es.close();
-    }
-  };
-  es.onerror = () => {
-    handlers.onError();
-    es.close();
-  };
-  return () => es.close();
 }
 
 export function deleteAssistantSession(sessionId: string) {

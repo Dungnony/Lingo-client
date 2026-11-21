@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { io, type Socket } from "socket.io-client";
 import useSWR, { mutate } from "swr";
-import { api, apiFetch, SERVER_ORIGIN } from "./api";
+import { api, apiFetch } from "./api";
 import { useAuth } from "./auth";
+import { getNotificationsSocket } from "./socket";
 import type { AppNotification, NotificationsPage } from "./types";
 
 const fetcher = <T>(path: string) => apiFetch<T>(path);
@@ -25,8 +25,6 @@ function patchCache(
   );
 }
 
-let socket: Socket | null = null;
-
 /**
  * Mở kết nối WebSocket nhận thông báo realtime khi đã đăng nhập (đặt trong
  * AppShell nên chạy suốt phiên làm việc trong app). Đăng xuất → ngắt kết nối
@@ -36,17 +34,8 @@ export function useNotificationSocket() {
   const { user } = useAuth();
 
   useEffect(() => {
-    if (!user) {
-      socket?.disconnect();
-      socket = null;
-      return;
-    }
-    if (!socket) {
-      socket = io(`${SERVER_ORIGIN}/notifications`, {
-        withCredentials: true,
-      });
-    }
-    const s = socket;
+    const s = getNotificationsSocket(Boolean(user));
+    if (!s) return;
     function onNew(notification: AppNotification) {
       patchCache((current) => ({
         ...current,
