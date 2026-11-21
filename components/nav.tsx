@@ -11,8 +11,9 @@ import { ThemeToggle } from "./theme-toggle";
 const LINKS = [
   { href: "/#lo-trinh", label: "Lộ trình học" },
   { href: "/vocabulary", label: "Từ vựng" },
+  { href: "/watch", label: "Học qua video" },
   { href: "/listening", label: "Luyện tập" },
-  { href: "/exams", label: "Kiểm tra" },
+  { href: "/ho-tro", label: "Hỗ trợ" },
 ];
 
 export function Nav() {

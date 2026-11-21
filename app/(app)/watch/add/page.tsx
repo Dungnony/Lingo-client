@@ -16,6 +16,44 @@ import { LEVELS, levelName } from "@/lib/levels";
 import type { VideoDetail, VideoKind } from "@/lib/types";
 import { VIDEO_KINDS } from "@/lib/video-kinds";
 
+const SUGGESTED_VIDEOS: {
+  label: string;
+  youtubeUrl: string;
+  title: string;
+  level: number;
+  kind: VideoKind;
+  transcript: string;
+}[] = [
+  {
+    label: "Hội thoại quán cà phê (Level 1)",
+    youtubeUrl: "https://www.youtube.com/watch?v=P_6vDLq64gE",
+    title: "Giao tiếp hàng ngày: Gọi đồ uống và trò chuyện ở quán cà phê",
+    level: 1,
+    kind: "DIALOGUE",
+    transcript: [
+      "[00:02] Good morning! Can I get a medium iced latte with oat milk, please? | Chào buổi sáng! Cho mình một ly latte đá cỡ vừa dùng sữa yến mạch nhé?",
+      "[00:07] Sure thing. Would you like anything to eat with that today? | Được chứ. Hôm nay bạn có muốn dùng thêm đồ ăn nhẹ gì kèm theo không?",
+      "[00:12] Just a warm croissant, please. Is it possible to sit by the window? | Cho mình thêm một bánh sừng bò ấm nhé. Mình ngồi ở bàn cạnh cửa sổ được không?",
+      "[00:18] Of course, feel free to take any seat you like. | Tất nhiên rồi, bạn cứ thoải mái chọn chỗ ngồi mình thích nhé.",
+      "[00:24] Thank you so much! Have a wonderful morning. | Cảm ơn bạn rất nhiều! Chúc bạn một buổi sáng tốt lành.",
+    ].join("\n"),
+  },
+  {
+    label: "TED · Thói quen 30 ngày (Level 3)",
+    youtubeUrl: "https://www.youtube.com/watch?v=UNP03fDSj1U",
+    title: "Thử một điều mới trong 30 ngày — Matt Cutts (TED)",
+    level: 3,
+    kind: "PODCAST",
+    transcript: [
+      "[00:12] A few years ago, I felt like I was stuck in a rut, so I decided to follow in the footsteps of the great American philosopher, Morgan Spurlock. | Vài năm trước, tôi cảm thấy mình đang dậm chân tại chỗ, nên quyết định nối gót triết gia người Mỹ Morgan Spurlock.",
+      "[00:21] And try something new for 30 days. The idea is actually pretty simple. | Và thử làm một điều mới mẻ trong suốt 30 ngày. Ý tưởng thực ra rất đơn giản.",
+      "[00:27] Think about something you have always wanted to add to your life and try it for the next 30 days. | Hãy nghĩ về một điều bạn luôn muốn thêm vào cuộc sống và thử thực hiện nó trong 30 ngày tới.",
+      "[00:34] It turns out 30 days is just about the right amount of time to add a new habit or subtract a habit from your life. | Hoá ra 30 ngày là khoảng thời gian vừa vặn để hình thành một thói quen mới hoặc từ bỏ một thói quen cũ.",
+      "[00:43] I also noticed that as I started to do more and harder 30-day challenges, my self-confidence grew. | Tôi cũng nhận thấy khi bắt đầu thực hiện nhiều thử thách 30 ngày khó hơn, sự tự tin của tôi tăng lên rõ rệt.",
+    ].join("\n"),
+  },
+];
+
 export default function AddVideoPage() {
   const { user, loading } = useRequireAuth();
   const router = useRouter();
@@ -24,10 +62,21 @@ export default function AddVideoPage() {
   const [title, setTitle] = useState("");
   const [level, setLevel] = useState<number | undefined>();
   const [kind, setKind] = useState<VideoKind | undefined>();
+  const [transcript, setTranscript] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   if (loading || !user) return <Spinner />;
+
+  function applySuggestion(preset: (typeof SUGGESTED_VIDEOS)[number]) {
+    setYoutubeUrl(preset.youtubeUrl);
+    setTitle(preset.title);
+    setLevel(preset.level);
+    setKind(preset.kind);
+    setTranscript(preset.transcript);
+    setShowMore(true);
+    setError("");
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -39,6 +88,7 @@ export default function AddVideoPage() {
         title: title.trim() || undefined,
         level,
         kind,
+        transcript: transcript.trim() || undefined,
       });
       router.push(`/watch/${video.id}`);
     } catch (err) {
@@ -61,6 +111,23 @@ export default function AddVideoPage() {
         description="Dán đường dẫn YouTube có phụ đề tiếng Anh — Lingo tự lấy bản chép + dịch nghĩa cho bạn."
       />
       <Card>
+        <div className="mb-5 rounded-xl border border-primary/15 bg-primary/5 p-3.5">
+          <p className="text-xs font-semibold text-primary">
+            💡 Điền nhanh mẫu video song ngữ có sẵn:
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {SUGGESTED_VIDEOS.map((preset) => (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => applySuggestion(preset)}
+                className="rounded-lg border border-primary/20 bg-surface px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
+              >
+                + {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <form onSubmit={(e) => void submit(e)} className="space-y-5">
           <label className="block text-sm font-medium">
             Đường dẫn YouTube
@@ -85,7 +152,7 @@ export default function AddVideoPage() {
               onClick={() => setShowMore(true)}
               className="text-sm font-semibold text-primary"
             >
-              + Thêm chi tiết (tuỳ chọn)
+              + Thêm chi tiết &amp; bản chép phụ đề (tuỳ chọn)
             </button>
           ) : (
             <div className="space-y-4 border-t border-border pt-4">
@@ -141,6 +208,22 @@ export default function AddVideoPage() {
                   ))}
                 </div>
               </div>
+              <label className="block text-sm font-medium">
+                Bản chép phụ đề (tuỳ chọn — dùng khi video không bật sẵn CC trên YouTube)
+                <textarea
+                  rows={5}
+                  value={transcript}
+                  onChange={(e) => setTranscript(e.target.value)}
+                  placeholder={
+                    "Mỗi câu 1 dòng. Có thể kèm mốc [mm:ss] và nghĩa tiếng Việt sau dấu |:\n[00:05] Hello everyone, welcome back! | Chào mọi người, chào mừng quay lại!\n[00:10] Let's practice speaking English together."
+                  }
+                  className="field mt-1.5 font-mono text-xs"
+                />
+                <p className="mt-1 text-xs text-muted">
+                  Nếu chỉ dán câu tiếng Anh, Lingo sẽ tự động dịch nghĩa tiếng
+                  Việt cho từng dòng.
+                </p>
+              </label>
             </div>
           )}
 

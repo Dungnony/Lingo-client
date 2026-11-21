@@ -46,6 +46,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/messages", label: "Tin nhắn", icon: "message" },
       { href: "/account", label: "Tài khoản", icon: "user" },
       { href: "/settings", label: "Cài đặt", icon: "settings" },
+      { href: "/ho-tro", label: "Trợ giúp & Liên hệ", icon: "info" },
     ],
   },
 ];

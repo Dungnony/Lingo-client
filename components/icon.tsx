@@ -53,6 +53,7 @@ const paths = {
   share:
     "M18 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM6 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM18 16a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM8.59 13.51 15.42 17.49M15.41 6.51 8.59 10.49",
   flag: "M5 21V4m0 0h11l-2 4 2 4H5",
+  mail: "M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm0 1 8 6 8-6",
 } as const;
 
 export type IconName = keyof typeof paths;

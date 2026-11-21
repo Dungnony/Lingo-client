@@ -15,40 +15,45 @@ const SKILLS: {
   icon: IconName;
   title: string;
   description: string;
-  character: string;
+  sampleEn: string;
+  sampleNote: string;
   tag: string;
 }[] = [
   {
     href: "/vocabulary",
     icon: "book",
-    title: "Từ vựng theo cấp độ",
-    description: "Phiên âm IPA, nghĩa rõ ràng, ví dụ sinh động",
-    character: "A",
+    title: "Từ vựng chuẩn CEFR",
+    description: "Phiên âm IPA, giọng đọc, nghĩa tiếng Việt và ví dụ thực tế",
+    sampleEn: "fluent · /ˈfluː.ənt/",
+    sampleNote: "Trôi chảy, lưu loát",
     tag: "Từ vựng",
   },
   {
     href: "/grammar",
     icon: "cards",
-    title: "Hiểu câu, nhớ cách dùng",
-    description: "Khám phá từ qua câu ví dụ thực tế",
-    character: "G",
+    title: "Ngữ pháp & bài tập điền từ",
+    description: "Giải thích dễ hiểu kèm bài luyện chọn từ điền câu ngay tại chỗ",
+    sampleEn: "She has lived here since 2020.",
+    sampleNote: "Present Perfect · Hiện tại hoàn thành",
     tag: "Ngữ pháp",
   },
   {
-    href: "/listening",
-    icon: "sound",
-    title: "Lắng nghe tiếng Anh",
-    description: "Nghe kỹ hơn, nhận diện tốt hơn",
-    character: "L",
-    tag: "Luyện nghe",
+    href: "/watch",
+    icon: "play",
+    title: "Học qua video song ngữ",
+    description: "Phụ đề chạy khớp lời nói, bấm vào bất kỳ từ nào để tra nhanh",
+    sampleEn: "Stay hungry. Stay foolish.",
+    sampleNote: "TED Talks & hội thoại hàng ngày",
+    tag: "Video song ngữ",
   },
   {
     href: "/pronunciation",
     icon: "mic",
-    title: "Tự tin với phát âm",
-    description: "Nghe mẫu, ghi âm và luyện lại",
-    character: "S",
-    tag: "Luyện nói",
+    title: "Luyện nghe & phát âm",
+    description: "Nghe câu mẫu, thu âm giọng đọc và nhận chấm điểm từng từ",
+    sampleEn: "Practice makes progress.",
+    sampleNote: "Nhận diện giọng nói trực tiếp",
+    tag: "Nghe & Nói",
   },
 ];
 const FAQ = [
@@ -158,20 +163,22 @@ export default function Home() {
                 {
                   href: "/learn",
                   icon: "route" as const,
-                  title: "Học theo lộ trình",
-                  text: "Từng bài nhỏ, nền tảng vững vàng.",
+                  title: "Học theo lộ trình bài bản",
+                  text: "Chia nhỏ theo từng chủ đề từ A1 đến C2, học tới đâu chắc tới đó.",
                   className: "discovery-red",
                   label: "BẮT ĐẦU TỪ ĐÂY",
-                  word: "A",
+                  sampleEn: "Level 1 → Level 6",
+                  sampleSub: "650+ bài học theo chủ đề giao tiếp & học thuật",
                 },
                 {
                   href: "/study",
                   icon: "cards" as const,
-                  title: "Ôn tập flashcard",
-                  text: "Gặp lại từ cũ, ghi nhớ lâu hơn.",
+                  title: "Ôn tập Flashcard thông minh",
+                  text: "Thuật toán SM-2 & FSRS tự tính thời điểm vàng để nhắc bạn ôn lại trước khi quên.",
                   className: "discovery-gold",
-                  label: "DUY TRÌ MỖI NGÀY",
-                  word: "B",
+                  label: "GHI NHỚ LÂU DÀI",
+                  sampleEn: "Spaced Repetition",
+                  sampleSub: "Chỉ 10–15 phút mỗi ngày để giữ vững vốn từ",
                 },
               ].map((item) => (
                 <Link
@@ -185,11 +192,16 @@ export default function Home() {
                     </span>
                     <Icon name={item.icon} size={19} />
                   </div>
-                  <div
-                    aria-hidden="true"
-                    className="my-5 text-center text-7xl font-bold text-primary/40"
-                  >
-                    {item.word}
+                  <div className="my-5 rounded-xl border border-primary/15 bg-surface/80 px-3.5 py-3 backdrop-blur-sm">
+                    <p
+                      lang="en"
+                      className="word-display text-lg font-bold text-primary"
+                    >
+                      {item.sampleEn}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted">
+                      {item.sampleSub}
+                    </p>
                   </div>
                   <div className="flex items-end justify-between gap-3">
                     <div>
@@ -286,17 +298,20 @@ export default function Home() {
                 href={skill.href}
                 className="hover-card skill-card panel group overflow-hidden"
               >
-                <div className="relative flex h-28 items-center justify-center overflow-hidden bg-primary/4">
-                  <span className="absolute left-3 top-3 rounded-md border border-primary/10 bg-surface px-2 py-1 text-[10px] font-medium text-primary">
+                <div className="relative flex h-28 flex-col justify-center overflow-hidden bg-primary/4 px-4 pt-5">
+                  <span className="absolute left-3 top-2.5 rounded-md border border-primary/10 bg-surface px-2 py-0.5 text-[10px] font-medium text-primary">
                     {skill.tag}
                   </span>
-                  <span
-                    aria-hidden="true"
-                    className="skill-character text-6xl font-bold text-primary/65"
+                  <p
+                    lang="en"
+                    className="word-display mt-2 truncate text-sm font-bold text-foreground group-hover:text-primary"
                   >
-                    {skill.character}
-                  </span>
-                  <span className="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-fg">
+                    {skill.sampleEn}
+                  </p>
+                  <p className="mt-0.5 truncate text-[11px] text-muted">
+                    {skill.sampleNote}
+                  </p>
+                  <span className="absolute bottom-2.5 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-fg">
                     <Icon name={skill.icon} size={15} />
                   </span>
                 </div>
@@ -406,6 +421,93 @@ export default function Home() {
               <p className="px-5 pb-5 text-sm leading-7 text-muted">{answer}</p>
             </details>
           ))}
+        </div>
+      </section>
+
+      <section
+        id="ho-tro"
+        className="border-t border-border bg-surface/60 scroll-mt-24"
+      >
+        <div className="page-wrap space-y-6 py-12! sm:py-14!">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <span className="section-label">
+                <Icon name="mail" size={13} /> LIÊN HỆ &amp; HỖ TRỢ HỌC VIÊN
+              </span>
+              <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
+                Cần giải đáp hoặc góp ý?{" "}
+                <span className="text-primary">Lingo luôn lắng nghe.</span>
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm text-muted">
+                Đội ngũ phát triển luôn sẵn sàng hỗ trợ bạn về tài khoản, lộ
+                trình học, báo lỗi từ vựng hoặc tiếp nhận ý tưởng tính năng mới.
+              </p>
+            </div>
+            <LinkButton href="/ho-tro">
+              Trung tâm hỗ trợ &amp; Gửi góp ý
+              <Icon name="arrow" size={16} />
+            </LinkButton>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="panel p-5">
+              <span className="icon-tile mb-3">
+                <Icon name="mail" size={19} />
+              </span>
+              <h3 className="text-sm font-semibold">Email hỗ trợ trực tiếp</h3>
+              <p className="mt-1.5 text-xs leading-6 text-muted">
+                Hỗ trợ khôi phục tài khoản, giải đáp kỹ thuật và tiếp nhận góp ý
+                trực tiếp qua hộp thư đội ngũ Lingo.
+              </p>
+              <a
+                href="mailto:nguyendungsenpai109@gmail.com?subject=%5BLingo%5D%20Y%C3%AAu%20c%E1%BA%A7u%20h%E1%BB%97%20tr%E1%BB%A3"
+                className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+              >
+                nguyendungsenpai109@gmail.com
+                <Icon name="arrow" size={14} />
+              </a>
+            </div>
+
+            <div className="panel p-5">
+              <span className="icon-tile mb-3">
+                <Icon name="flag" size={19} />
+              </span>
+              <h3 className="text-sm font-semibold">
+                Góp ý từ vựng &amp; học liệu
+              </h3>
+              <p className="mt-1.5 text-xs leading-6 text-muted">
+                Phát hiện nghĩa tiếng Việt hoặc ví dụ chưa chuẩn? Bấm nút 🚩 trên
+                thẻ từ hoặc gửi biểu mẫu tại trang Hỗ trợ.
+              </p>
+              <Link
+                href="/ho-tro"
+                className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+              >
+                Gửi phản hồi nội dung
+                <Icon name="arrow" size={14} />
+              </Link>
+            </div>
+
+            <div className="panel p-5">
+              <span className="icon-tile mb-3">
+                <Icon name="message" size={19} />
+              </span>
+              <h3 className="text-sm font-semibold">
+                Cộng đồng &amp; Trợ lý AI 24/7
+              </h3>
+              <p className="mt-1.5 text-xs leading-6 text-muted">
+                Hỏi bài tức thì cùng Trợ lý AI ở góc phải màn hình hoặc kết nối,
+                nhắn tin luyện tiếng Anh cùng bạn học khác.
+              </p>
+              <Link
+                href={user ? "/messages?tab=connect" : "/ho-tro"}
+                className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+              >
+                {user ? "Kết nối bạn học ngay" : "Xem hướng dẫn chi tiết"}
+                <Icon name="arrow" size={14} />
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
     </div>

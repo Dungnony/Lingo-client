@@ -33,8 +33,9 @@ export default function SiteLayout({ children }: { children: ReactNode }) {
               ],
             },
             {
-              title: "ĐỒNG HÀNH CÙNG BẠN",
+              title: "ĐỒNG HÀNH & HỖ TRỢ",
               links: [
+                ["Trung tâm hỗ trợ & Liên hệ", "/ho-tro"],
                 ["Tài khoản của bạn", "/account"],
                 ["Tiến độ học tập", "/progress"],
                 ["Học qua video", "/watch"],

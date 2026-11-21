@@ -208,13 +208,19 @@ export default function WatchPage() {
           ) : (
             <EmptyState
               title="Chưa có video phù hợp"
-              description="Thử một từ khóa, cấp độ hoặc thể loại khác để tìm câu chuyện tiếp theo."
+              description="Thử một từ khóa, cấp độ hoặc thể loại khác, hoặc thêm video YouTube bạn yêu thích vào thư viện."
             >
-              {(kind || level || query) && (
-                <Button variant="secondary" onClick={xoaBoLoc}>
-                  Xem tất cả video
-                </Button>
-              )}
+              <div className="flex flex-wrap justify-center gap-2">
+                {(kind || level || query) && (
+                  <Button variant="secondary" onClick={xoaBoLoc}>
+                    Xem tất cả video
+                  </Button>
+                )}
+                <LinkButton href="/watch/add">
+                  <Icon name="plus" size={16} />
+                  Thêm video mới
+                </LinkButton>
+              </div>
             </EmptyState>
           )}
         </div>
