@@ -18,7 +18,12 @@ import {
   SectionHeading,
   Spinner,
 } from "@/components/ui";
+import {
+  InteractiveEnglishText,
+  WordLookupPopover,
+} from "@/components/word-lookup-popover";
 import { useRequireAuth } from "@/lib/auth";
+import { buildGrammarClozeQuestions } from "@/lib/grammar-cloze";
 import { useGrammar, useGrammarLevels, useGrammarPoint } from "@/lib/hooks";
 import { levelLabel } from "@/lib/levels";
 import type { GrammarExample, GrammarListItem } from "@/lib/types";
@@ -39,6 +44,7 @@ export default function GrammarPage() {
   const list = useGrammar(active);
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [lookupWord, setLookupWord] = useState<string | null>(null);
   const grouped = useMemo(() => {
     const term = normalizeSearch(query.trim());
     return (list.data ?? []).filter((point) =>
@@ -169,6 +175,8 @@ export default function GrammarPage() {
                         point={point}
                         index={index}
                         open={openSlug === point.slug}
+                        onWordClick={setLookupWord}
+                        selectedWord={lookupWord}
                         onToggle={() =>
                           setOpenSlug((current) =>
                             current === point.slug ? null : point.slug,
@@ -259,6 +267,10 @@ export default function GrammarPage() {
           </div>
         </>
       )}
+      <WordLookupPopover
+        word={lookupWord}
+        onClose={() => setLookupWord(null)}
+      />
     </div>
   );
 }
@@ -281,11 +293,15 @@ function GrammarRow({
   index,
   open,
   onToggle,
+  onWordClick,
+  selectedWord,
 }: {
   point: GrammarListItem;
   index: number;
   open: boolean;
   onToggle: () => void;
+  onWordClick: (word: string) => void;
+  selectedWord: string | null;
 }) {
   const detail = useGrammarPoint(open ? point.slug : null);
 
@@ -359,13 +375,20 @@ function GrammarRow({
               )}
 
               <div>
-                <p className="eyebrow mb-2">VÍ DỤ</p>
+                <p className="eyebrow mb-2">VÍ DỤ (BẤM VÀO TỪ ĐỂ TRA NHANH)</p>
                 <div className="space-y-2.5">
                   {detail.data.examples.map((example, i) => (
-                    <ExampleRow key={i} example={example} />
+                    <ExampleRow
+                      key={i}
+                      example={example}
+                      onWordClick={onWordClick}
+                      selectedWord={selectedWord}
+                    />
                   ))}
                 </div>
               </div>
+
+              <GrammarClozePractice examples={detail.data.examples} />
             </div>
           )}
         </div>
@@ -374,7 +397,15 @@ function GrammarRow({
   );
 }
 
-function ExampleRow({ example }: { example: GrammarExample }) {
+function ExampleRow({
+  example,
+  onWordClick,
+  selectedWord,
+}: {
+  example: GrammarExample;
+  onWordClick: (word: string) => void;
+  selectedWord: string | null;
+}) {
   const audio = useWordAudio(example.en);
   const [showTranslation, setShowTranslation] = useState(true);
 
@@ -392,7 +423,11 @@ function ExampleRow({ example }: { example: GrammarExample }) {
         </button>
         <div className="min-w-0">
           <p lang="en" className="word-display text-base leading-snug">
-            {example.en}
+            <InteractiveEnglishText
+              text={example.en}
+              selectedWord={selectedWord}
+              onWordClick={onWordClick}
+            />
           </p>
           {showTranslation && (
             <p className="mt-1 text-sm text-muted">{example.vi}</p>
@@ -406,6 +441,109 @@ function ExampleRow({ example }: { example: GrammarExample }) {
         >
           {showTranslation ? "Ẩn bản dịch" : "Bản dịch"}
         </button>
+      </div>
+    </div>
+  );
+}
+
+function GrammarClozePractice({ examples }: { examples: GrammarExample[] }) {
+  const questions = useMemo(
+    () => buildGrammarClozeQuestions(examples, 4),
+    [examples],
+  );
+  const [picked, setPicked] = useState<Record<number, string>>({});
+
+  if (questions.length === 0) return null;
+
+  const answeredCount = Object.keys(picked).length;
+  const correctCount = questions.filter(
+    (q) => picked[q.index] === q.answer,
+  ).length;
+
+  return (
+    <div className="rounded-2xl border border-primary/20 bg-primary/[0.04] p-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="eyebrow text-primary">LUYỆN TẬP NHANH · ĐIỀN TỪ</p>
+          <p className="text-xs text-muted">
+            Chọn từ phù hợp nhất để hoàn thành các mẫu câu vừa học.
+          </p>
+        </div>
+        {answeredCount > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-surface px-2.5 py-1 text-xs font-semibold text-primary">
+              Đúng {correctCount}/{questions.length}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPicked({})}
+              className="text-xs font-medium text-muted hover:text-primary hover:underline"
+            >
+              Làm lại
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-3">
+        {questions.map((q) => {
+          const chosen = picked[q.index];
+          const isAnswered = chosen !== undefined;
+          const isRight = chosen === q.answer;
+          return (
+            <div
+              key={q.index}
+              className="rounded-xl border border-border bg-surface p-3.5"
+            >
+              <p lang="en" className="word-display text-sm leading-relaxed">
+                {q.before}
+                <span
+                  className={`mx-1 inline-block min-w-14 rounded-md border px-2 py-0.5 text-center font-bold ${
+                    !isAnswered
+                      ? "border-dashed border-primary/40 bg-primary/5 text-primary"
+                      : isRight
+                        ? "border-good bg-good/10 text-good"
+                        : "border-danger bg-danger/10 text-danger"
+                  }`}
+                >
+                  {isAnswered ? chosen : "____"}
+                </span>
+                {q.after}
+              </p>
+              {q.vi && <p className="mt-1 text-xs text-muted">{q.vi}</p>}
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                {q.options.map((opt) => {
+                  const isThisChosen = chosen === opt;
+                  const isThisCorrect = isAnswered && opt === q.answer;
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      disabled={isAnswered}
+                      onClick={() =>
+                        setPicked((prev) => ({ ...prev, [q.index]: opt }))
+                      }
+                      className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        isThisCorrect
+                          ? "border-good bg-good/10 text-good"
+                          : isThisChosen && !isRight
+                            ? "border-danger bg-danger/10 text-danger"
+                            : "border-border bg-surface-2 hover:border-primary/40 hover:bg-primary/5"
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+              {isAnswered && !isRight && (
+                <p className="mt-2 text-xs text-good">
+                  Đáp án đúng: <strong lang="en">{q.answer}</strong>
+                </p>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
