@@ -806,3 +806,33 @@ export interface DuelActiveMatch {
   question: DuelRoundQuestion | null;
   myAnswered: boolean;
 }
+
+export interface SupportFeedbackItem {
+  id: string;
+  name: string;
+  email: string | null;
+  topic: string;
+  message: string;
+  status: "OPEN" | "RESOLVED";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlacementQuestion {
+  wordId: string;
+  level: number;
+  prompt: string;
+  pronunciation: string | null;
+  options: string[];
+  answer: string;
+}
+
+export interface SentenceEvaluation {
+  score: number;
+  isNatural: boolean;
+  corrected: string;
+  feedbackVi: string;
+  tipVi: string;
+  usedTargetWord: boolean;
+  aiPowered: boolean;
+}

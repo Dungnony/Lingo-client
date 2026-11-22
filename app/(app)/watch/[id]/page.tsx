@@ -76,6 +76,7 @@ export default function WatchDetailPage() {
 
   const [showTrans, setShowTrans] = useState(true);
   const [showCaption, setShowCaption] = useState(false);
+  const [loopLine, setLoopLine] = useState(false);
   const [active, setActive] = useState<number | null>(null);
   const [readMax, setReadMax] = useState(0);
   const [lookupWord, setLookupWord] = useState<string | null>(null);
@@ -86,6 +87,11 @@ export default function WatchDetailPage() {
   const savedAt = useRef(0);
   const activeRef = useRef(0);
   const readRef = useRef(0);
+  const loopLineRef = useRef(false);
+
+  useEffect(() => {
+    loopLineRef.current = loopLine;
+  }, [loopLine]);
 
   // Máy nhắc chữ: khung tiêu điểm cố định giữa panel, chữ trượt lên qua nó.
   const [vpH, setVpH] = useState(0);
@@ -194,6 +200,14 @@ export default function WatchDetailPage() {
   const onTick = useCallback(
     (t: number) => {
       if (!times.length) return;
+      if (loopLineRef.current && activeRef.current > 0) {
+        const start = times[activeRef.current - 1];
+        const end = times[activeRef.current] ?? start + 4.5;
+        if (Number.isFinite(start) && t >= end - 0.15) {
+          seekRef.current?.(start);
+          return;
+        }
+      }
       let idx = -1;
       for (let i = 0; i < times.length; i += 1) {
         if (times[i] <= t + 0.2) idx = i;
@@ -203,6 +217,37 @@ export default function WatchDetailPage() {
     },
     [times, goToLine],
   );
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const target = e.target as HTMLElement | null;
+      if (
+        e.repeat ||
+        e.ctrlKey ||
+        e.metaKey ||
+        e.altKey ||
+        target?.closest("input, textarea, select, [contenteditable]")
+      ) {
+        return;
+      }
+      const key = e.key.toLowerCase();
+      if (key === "l") {
+        e.preventDefault();
+        setLoopLine((v) => !v);
+      } else if (key === "r" && times.length > 0) {
+        e.preventDefault();
+        const targetIdx = activeRef.current > 0 ? activeRef.current : 1;
+        const start = times[targetIdx - 1];
+        if (Number.isFinite(start)) {
+          seekRef.current?.(start);
+          activeRef.current = targetIdx;
+          setActive(targetIdx);
+        }
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [times]);
 
   if (loading || !user || isLoading) return <Spinner />;
   if (error || !data)
@@ -343,8 +388,10 @@ export default function WatchDetailPage() {
           resumeAt={resumeAt}
           showTrans={showTrans}
           showCaption={showCaption}
+          loopLine={loopLine}
           onToggleTrans={() => setShowTrans((v) => !v)}
           onToggleCaption={() => setShowCaption((v) => !v)}
+          onToggleLoop={() => setLoopLine((v) => !v)}
           onSelect={selectLine}
           onWordClick={setLookupWord}
           selectedWord={lookupWord}
@@ -358,7 +405,7 @@ export default function WatchDetailPage() {
               onClick={() => setShowTrans((v) => !v)}
               className={chip(showTrans)}
             >
-              Dịch
+              {showTrans ? "Ẩn dịch Việt" : "Hiện dịch Việt"}
             </button>
             <button
               aria-pressed={showCaption}
@@ -367,6 +414,14 @@ export default function WatchDetailPage() {
               title="Hiện phụ đề đè lên video"
             >
               Phụ đề video
+            </button>
+            <button
+              aria-pressed={loopLine}
+              onClick={() => setLoopLine((v) => !v)}
+              className={chip(loopLine)}
+              title="Lặp lại câu đang phát để luyện nghe & shadowing (phím L)"
+            >
+              Lặp câu
             </button>
             <span className="ml-auto w-9 text-right text-xs font-semibold text-muted">
               {pct}%

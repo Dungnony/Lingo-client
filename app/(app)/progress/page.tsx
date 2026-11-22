@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ActivityCalendar } from "@/components/activity-calendar";
+import { ProgressShareButton } from "@/components/progress-share-card";
 import {
   Card,
   EmptyState,
@@ -15,13 +16,14 @@ import {
 } from "@/components/ui";
 import { Icon } from "@/components/icon";
 import { useRequireAuth } from "@/lib/auth";
-import { useProgress, useRecentQuizzes } from "@/lib/hooks";
+import { useProgress, useRecentQuizzes, useStreak } from "@/lib/hooks";
 import { levelBandStyle, levelLabel } from "@/lib/levels";
 
 export default function ProgressPage() {
   const { user, loading } = useRequireAuth();
   const { data, isLoading, error, mutate } = useProgress();
   const quizzes = useRecentQuizzes();
+  const streak = useStreak();
   if (loading || !user) return <Spinner />;
   const completion = data?.totals.totalWords
     ? Math.round((data.totals.learned / data.totals.totalWords) * 100)
@@ -35,10 +37,22 @@ export default function ProgressPage() {
         title="Tiến độ học tập"
         description="Nhìn lại những gì đã học và biết mình cần tập trung vào đâu."
       >
-        <LinkButton href="/study">
-          <Icon name="cards" size={17} />
-          Tiếp tục ôn tập
-        </LinkButton>
+        <div className="flex flex-wrap items-center gap-2">
+          {data && (
+            <ProgressShareButton
+              displayName={user.displayName}
+              learned={data.totals.learned}
+              learning={data.totals.learning}
+              totalWords={data.totals.totalWords}
+              completionPct={completion}
+              currentStreak={streak.data?.currentStreak ?? 0}
+            />
+          )}
+          <LinkButton href="/study">
+            <Icon name="cards" size={17} />
+            Tiếp tục ôn tập
+          </LinkButton>
+        </div>
       </PageHeading>
       {error ? (
         <ErrorNote>

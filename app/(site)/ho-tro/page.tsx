@@ -6,11 +6,13 @@ import { Icon, type IconName } from "@/components/icon";
 import {
   Button,
   Card,
+  ErrorNote,
   LinkButton,
   PageHeading,
   SectionHeading,
 } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
+import { submitSupportFeedback } from "@/lib/hooks";
 
 const SUPPORT_EMAIL = "nguyendungsenpai109@gmail.com";
 
@@ -113,12 +115,36 @@ export default function SupportPage() {
   const [email, setEmail] = useState(user?.email ?? "");
   const [topic, setTopic] = useState(TOPIC_OPTIONS[0].value);
   const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!message.trim()) return;
-    setSubmitted(true);
+    const trimmedMessage = message.trim();
+    if (trimmedMessage.length < 5) {
+      setSubmitError("Vui lòng nhập nội dung chi tiết tối thiểu 5 ký tự.");
+      return;
+    }
+    setSubmitting(true);
+    setSubmitError(null);
+    const senderName = name.trim() || user?.displayName || "Học viên Lingo";
+    const senderEmail = email.trim() || user?.email || undefined;
+    try {
+      await submitSupportFeedback({
+        name: senderName,
+        email: senderEmail,
+        topic,
+        message: trimmedMessage,
+      });
+      setSubmitted(true);
+    } catch {
+      setSubmitError(
+        "Chưa gửi được lúc này. Bạn thử lại sau vài giây hoặc gửi qua ứng dụng Email bên dưới.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const mailtoHref = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
@@ -204,7 +230,7 @@ export default function SupportPage() {
                   </span>
                   <div>
                     <h3 className="font-semibold">
-                      Đã chuẩn bị nội dung phản hồi của bạn!
+                      Đã gửi góp ý trực tiếp tới đội ngũ Lingo!
                     </h3>
                     <p className="text-xs text-muted">
                       Chủ đề: <strong>{topic}</strong>
@@ -212,21 +238,11 @@ export default function SupportPage() {
                   </div>
                 </div>
                 <p className="text-sm leading-6 text-muted">
-                  Bấm nút <strong>&ldquo;Gửi ngay qua ứng dụng Email&rdquo;</strong>{" "}
-                  bên dưới để chuyển thẳng nội dung này tới hộp thư hỗ trợ{" "}
-                  <code className="rounded bg-surface-2 px-1.5 py-0.5 text-xs">
-                    {SUPPORT_EMAIL}
-                  </code>{" "}
-                  của đội ngũ Lingo.
+                  Cảm ơn bạn đã đóng góp ý kiến để giúp Lingo hoàn thiện hơn.
+                  Đội ngũ sẽ xem xét và phản hồi sớm nhất qua email bạn đã để
+                  lại (nếu có).
                 </p>
-                <div className="flex flex-wrap gap-3 pt-1">
-                  <a
-                    href={mailtoHref}
-                    className="motion-button inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-fg"
-                  >
-                    <Icon name="mail" size={16} />
-                    Gửi ngay qua ứng dụng Email
-                  </a>
+                <div className="flex flex-wrap items-center gap-3 pt-1">
                   <Button
                     variant="secondary"
                     onClick={() => {
@@ -234,12 +250,19 @@ export default function SupportPage() {
                       setMessage("");
                     }}
                   >
-                    Soạn nội dung khác
+                    Gửi thêm góp ý khác
                   </Button>
+                  <a
+                    href={mailtoHref}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-primary hover:underline"
+                  >
+                    <Icon name="mail" size={14} />
+                    Mở ứng dụng Email dự phòng
+                  </a>
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block text-sm font-medium">
                     Tên của bạn
@@ -247,15 +270,14 @@ export default function SupportPage() {
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder={user?.displayName ?? " Nguyễn Văn A"}
+                      placeholder={user?.displayName ?? "Nguyễn Văn A"}
                       className="field mt-1.5"
                     />
                   </label>
                   <label className="block text-sm font-medium">
-                    Email nhận phản hồi
+                    Email nhận phản hồi (không bắt buộc)
                     <input
                       type="email"
-                      required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder={user?.email ?? "ban@example.com"}
@@ -281,6 +303,7 @@ export default function SupportPage() {
                   Chi tiết yêu cầu hoặc góp ý
                   <textarea
                     required
+                    minLength={5}
                     rows={5}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
@@ -288,13 +311,20 @@ export default function SupportPage() {
                     className="field mt-1.5"
                   />
                 </label>
+                {submitError && <ErrorNote>{submitError}</ErrorNote>}
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                  <p className="text-xs text-muted">
-                    Thời gian phản hồi thông thường: trong vòng 24 giờ.
-                  </p>
-                  <Button type="submit" disabled={!message.trim()}>
+                  <a
+                    href={mailtoHref}
+                    className="text-xs text-muted hover:text-primary hover:underline"
+                  >
+                    Hoặc gửi qua {SUPPORT_EMAIL}
+                  </a>
+                  <Button
+                    type="submit"
+                    disabled={submitting || message.trim().length < 5}
+                  >
                     <Icon name="mail" size={16} />
-                    Tiếp tục gửi hỗ trợ
+                    {submitting ? "Đang gửi…" : "Gửi góp ý ngay"}
                   </Button>
                 </div>
               </form>

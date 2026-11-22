@@ -11,6 +11,7 @@
     "test:pwa": "node --test tests/pwa-worker.test.mjs"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "next": "16.4.5",
     "react": "19.2.8",
     "react-dom": "19.2.8",

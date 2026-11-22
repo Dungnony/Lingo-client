@@ -7,16 +7,18 @@ import { SelectionGroup } from "@/components/selection-group";
 import { AdminWords } from "@/components/admin/admin-words";
 import { AdminGrammar } from "@/components/admin/admin-grammar";
 import { AdminVideos } from "@/components/admin/admin-videos";
+import { AdminFeedback } from "@/components/admin/admin-feedback";
 import { useRequireAuth } from "@/lib/auth";
 import { ADMIN_ROLE } from "@/lib/roles";
 
-type AdminTab = "words" | "reports" | "grammar" | "videos";
+type AdminTab = "words" | "reports" | "grammar" | "videos" | "feedback";
 
 const TABS: { value: AdminTab; label: string }[] = [
   { value: "words", label: "Từ vựng" },
   { value: "reports", label: "Báo lỗi" },
   { value: "grammar", label: "Ngữ pháp" },
   { value: "videos", label: "Video" },
+  { value: "feedback", label: "Góp ý" },
 ];
 
 export default function AdminPage() {
@@ -70,6 +72,7 @@ export default function AdminPage() {
       {tab === "reports" && <AdminWords fixedFilter="reported" />}
       {tab === "grammar" && <AdminGrammar />}
       {tab === "videos" && <AdminVideos />}
+      {tab === "feedback" && <AdminFeedback />}
     </div>
   );
 }

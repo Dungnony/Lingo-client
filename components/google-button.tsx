@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Icon } from "@/components/icon";
 import { api, ApiError } from "@/lib/api";
 
 const GSI_SRC = "https://accounts.google.com/gsi/client";
@@ -29,7 +30,7 @@ let activeCredentialHandler: ((res: CredentialResponse) => void) | null = null;
 
 function isEmbeddedWebView(): boolean {
   if (typeof navigator === "undefined") return false;
-  return /FBAN|FBAV|FB_IAB|Messenger|Zalo|Line\/|Instagram|MicroMessenger/i.test(
+  return /FBAN|FBAV|FB_IAB|Messenger|Zalo|Line\/|Instagram|MicroMessenger|Barcelona|Threads|TikTok|BytedanceWebview|Musical_ly/i.test(
     navigator.userAgent,
   );
 }
@@ -67,6 +68,7 @@ export function GoogleButton({
   const onSuccessRef = useRef(onSuccess);
   const onErrorRef = useRef(onError);
   const [error, setError] = useState<string | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
   const embeddedBrowser = useSyncExternalStore(
     () => () => undefined,
     isEmbeddedWebView,
@@ -173,10 +175,31 @@ export function GoogleButton({
     <div className="space-y-2">
       <div ref={ref} className="google-button flex w-full justify-center" />
       {embeddedBrowser && (
-        <p className="text-center text-[11px] leading-5 text-muted">
-          Bạn đang mở trong trình duyệt của ứng dụng (Facebook/Zalo). Nếu bấm
-          Google bị lỗi, hãy chọn <strong>Mở bằng trình duyệt (Chrome/Safari)</strong>.
-        </p>
+        <div className="space-y-2 rounded-xl border border-warn/25 bg-warn/8 p-3 text-center">
+          <p className="text-[11px] leading-5 text-foreground">
+            Google chặn đăng nhập trong trình duyệt của ứng dụng
+            (Facebook, Threads, Zalo, TikTok). Hãy mở bằng{" "}
+            <strong>Chrome hoặc Safari</strong>.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              void navigator.clipboard
+                ?.writeText(window.location.href)
+                .then(() => {
+                  setCopiedLink(true);
+                  setTimeout(() => setCopiedLink(false), 2500);
+                })
+                .catch(() => undefined);
+            }}
+            className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-warn/30 bg-surface px-3 py-1 text-[11px] font-semibold text-foreground hover:bg-surface-2"
+          >
+            <Icon name={copiedLink ? "check" : "share"} size={13} />
+            {copiedLink
+              ? "Đã sao chép link!"
+              : "Sao chép link để mở bằng Chrome / Safari"}
+          </button>
+        </div>
       )}
       {error && <p className="text-center text-xs text-danger">{error}</p>}
     </div>

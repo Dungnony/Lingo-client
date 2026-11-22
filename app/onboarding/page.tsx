@@ -3,15 +3,31 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Icon, type IconName } from "@/components/icon";
-import { Button, Card, ErrorNote, PageHeading, Spinner } from "@/components/ui";
+import {
+  Button,
+  Card,
+  ErrorNote,
+  PageHeading,
+  ProgressBar,
+  Spinner,
+} from "@/components/ui";
 import { useAuth } from "@/lib/auth";
-import { submitOnboarding, useOnboarding } from "@/lib/hooks";
+import {
+  fetchPlacementQuiz,
+  submitOnboarding,
+  useOnboarding,
+} from "@/lib/hooks";
 import { LEVELS, levelLabel, levelName } from "@/lib/levels";
+import {
+  computePlacementLevel,
+  type PlacementAnswerResult,
+} from "@/lib/placement";
 import type {
   OnboardingGoal,
   OnboardingProfile,
+  PlacementQuestion,
   SubmitOnboardingInput,
 } from "@/lib/types";
 
@@ -187,6 +203,114 @@ function OnboardingWizard({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [placementOpen, setPlacementOpen] = useState(false);
+  const [pLoading, setPLoading] = useState(false);
+  const [pError, setPError] = useState<string | null>(null);
+  const [placementQuestions, setPlacementQuestions] = useState<
+    PlacementQuestion[]
+  >([]);
+  const [pIdx, setPIdx] = useState(0);
+  const [pPicked, setPPicked] = useState<string | null>(null);
+  const [pResults, setPResults] = useState<PlacementAnswerResult[]>([]);
+  const [placementSummary, setPlacementSummary] = useState<{
+    recommendedLevel: number;
+    correctCount: number;
+    total: number;
+  } | null>(null);
+  const placementTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (placementTimer.current) clearTimeout(placementTimer.current);
+    };
+  }, []);
+
+  async function startPlacementTest() {
+    if (placementTimer.current) clearTimeout(placementTimer.current);
+    setPlacementOpen(true);
+    setPLoading(true);
+    setPError(null);
+    setPIdx(0);
+    setPPicked(null);
+    setPResults([]);
+    try {
+      const data = await fetchPlacementQuiz();
+      if (!data.questions.length) {
+        setPError("Chưa tải được câu hỏi kiểm tra nhanh.");
+      } else {
+        setPlacementQuestions(data.questions);
+      }
+    } catch {
+      setPError("Chưa tải được bài test xếp cấp. Bạn thử lại hoặc tự chọn nhé.");
+    } finally {
+      setPLoading(false);
+    }
+  }
+
+  const activePlacementQ = placementOpen ? placementQuestions[pIdx] : undefined;
+
+  const pickPlacementOption = useCallback(
+    (option: string) => {
+      if (!activePlacementQ || pPicked !== null) return;
+      setPPicked(option);
+      const nextResults = [
+        ...pResults,
+        {
+          level: activePlacementQ.level,
+          isCorrect: option === activePlacementQ.answer,
+        },
+      ];
+      if (placementTimer.current) clearTimeout(placementTimer.current);
+      placementTimer.current = setTimeout(() => {
+        if (pIdx + 1 < placementQuestions.length) {
+          setPResults(nextResults);
+          setPPicked(null);
+          setPIdx(pIdx + 1);
+        } else {
+          const summary = computePlacementLevel(nextResults);
+          setPlacementSummary(summary);
+          setHasStudiedBefore(summary.recommendedLevel > 1);
+          setSelfAssessedLevel(
+            summary.recommendedLevel > 1 ? summary.recommendedLevel : null,
+          );
+          setPlacementOpen(false);
+          setPPicked(null);
+        }
+      }, 260);
+    },
+    [activePlacementQ, pIdx, pPicked, pResults, placementQuestions.length],
+  );
+
+  useEffect(() => {
+    if (
+      !placementOpen ||
+      pLoading ||
+      !activePlacementQ ||
+      pPicked !== null
+    ) {
+      return;
+    }
+    function onKey(e: KeyboardEvent) {
+      const target = e.target as HTMLElement | null;
+      if (
+        e.repeat ||
+        e.ctrlKey ||
+        e.metaKey ||
+        e.altKey ||
+        target?.closest("input, textarea, select, [contenteditable]")
+      ) {
+        return;
+      }
+      const option = activePlacementQ?.options[Number(e.key) - 1];
+      if (option) {
+        e.preventDefault();
+        pickPlacementOption(option);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [activePlacementQ, pLoading, pPicked, pickPlacementOption, placementOpen]);
+
   async function submit() {
     if (hasStudiedBefore === null || !goal || plansToTakeExam === null)
       return;
@@ -230,8 +354,134 @@ function OnboardingWizard({
       {errorBanner && <ErrorNote>{errorBanner}</ErrorNote>}
       {error && <ErrorNote>{error}</ErrorNote>}
 
-      {step === 1 && (
+      {step === 1 && placementOpen && (
+        <Card className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                <Icon name="spark" size={15} /> Test xếp cấp nhanh
+              </p>
+              <h2 className="mt-1 font-semibold">
+                Trả lời nhanh {placementQuestions.length || 6} từ từ dễ đến nâng cao
+              </h2>
+            </div>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                if (placementTimer.current) clearTimeout(placementTimer.current);
+                setPlacementOpen(false);
+              }}
+              className="min-h-9! px-3! py-1.5! text-xs!"
+            >
+              Tự chọn
+            </Button>
+          </div>
+
+          {pLoading ? (
+            <Spinner />
+          ) : pError ? (
+            <div className="space-y-3">
+              <ErrorNote>{pError}</ErrorNote>
+              <div className="flex gap-2">
+                <Button variant="secondary" onClick={() => setPlacementOpen(false)}>
+                  Quay lại tự chọn
+                </Button>
+                <Button onClick={() => void startPlacementTest()}>Thử lại</Button>
+              </div>
+            </div>
+          ) : activePlacementQ ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-xs text-muted">
+                <span>
+                  Câu <strong className="text-foreground">{pIdx + 1}</strong> /{" "}
+                  {placementQuestions.length}
+                </span>
+                <span>Mức Level {activePlacementQ.level}</span>
+              </div>
+              <ProgressBar
+                value={(pIdx / placementQuestions.length) * 100}
+                label="Tiến độ bài test xếp cấp"
+              />
+              <div className="rounded-2xl bg-surface-2/65 px-4 py-6 text-center">
+                <p className="text-xs text-muted">Nghĩa đúng của từ này là gì?</p>
+                <p lang="en" className="word-display mt-2 text-3xl font-bold">
+                  {activePlacementQ.prompt}
+                </p>
+                {activePlacementQ.pronunciation && (
+                  <p className="mt-1.5 text-sm text-primary">
+                    {activePlacementQ.pronunciation}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2.5" role="group" aria-label="Chọn đáp án">
+                {activePlacementQ.options.map((opt, optionIndex) => {
+                  const isPicked = pPicked === opt;
+                  const isRight = opt === activePlacementQ.answer;
+                  const revealed = pPicked !== null;
+                  let cls =
+                    "border-border bg-surface hover:border-primary/35 hover:bg-surface-2";
+                  if (revealed) {
+                    if (isRight) cls = "border-good bg-good/10 text-good";
+                    else if (isPicked) cls = "border-danger bg-danger/10 text-danger";
+                    else cls = "border-border bg-surface opacity-55";
+                  }
+                  return (
+                    <button
+                      key={`${optionIndex}-${opt}`}
+                      type="button"
+                      disabled={revealed}
+                      onClick={() => pickPlacementOption(opt)}
+                      className={`motion-button flex min-h-12 w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left text-sm transition-colors ${cls}`}
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-xs font-semibold text-muted">
+                        {optionIndex + 1}
+                      </span>
+                      <span className="flex-1 font-medium">{opt}</span>
+                      {revealed && isRight && (
+                        <Icon name="check" size={17} className="shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+        </Card>
+      )}
+
+      {step === 1 && !placementOpen && (
         <Card className="space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3.5">
+            <div className="min-w-0 flex-1">
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                <Icon name="spark" size={14} /> Không chắc mình ở cấp nào?
+              </p>
+              <p className="mt-0.5 text-xs text-muted">
+                Làm bài test xếp cấp nhanh (6 câu · 30 giây) để Lingo tự gợi ý đúng cấp độ.
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              onClick={() => void startPlacementTest()}
+              className="min-h-9! shrink-0 px-3! py-1.5! text-xs!"
+            >
+              {placementSummary ? "Làm lại test nhanh" : "Test xếp cấp nhanh"}
+            </Button>
+          </div>
+
+          {placementSummary && (
+            <div
+              role="status"
+              className="flex items-center gap-2 rounded-xl border border-good/25 bg-good/10 px-3.5 py-2.5 text-xs font-medium text-good"
+            >
+              <Icon name="check" size={16} className="shrink-0" />
+              <span>
+                Đúng {placementSummary.correctCount}/{placementSummary.total} câu — Gợi ý phù hợp:{" "}
+                <strong>{levelLabel(placementSummary.recommendedLevel)}</strong>
+              </span>
+            </div>
+          )}
+
           <h2 className="font-semibold">Bạn đã học tiếng Anh trước đây chưa?</h2>
           <div className="grid grid-cols-2 gap-3">
             <ChoiceButton

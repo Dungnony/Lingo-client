@@ -27,17 +27,53 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
   _retried?: boolean;
 }
 
+const SLOW_API_MS = 3500;
+let slowInFlight = 0;
+const slowListeners = new Set<() => void>();
+
+export function subscribeSlowApi(listener: () => void): () => void {
+  slowListeners.add(listener);
+  return () => slowListeners.delete(listener);
+}
+
+export function isServerWarming(): boolean {
+  return slowInFlight > 0;
+}
+
+function notifySlowListeners() {
+  for (const listener of slowListeners) listener();
+}
+
 async function raw(path: string, opts: RequestOptions = {}): Promise<Response> {
   const { body, _retried, headers, ...rest } = opts;
-  return fetch(`${API_BASE}${path}`, {
-    ...rest,
-    credentials: "include",
-    headers: {
-      ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
-      ...(headers ?? {}),
-    },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  let markedSlow = false;
+  const timer = setTimeout(() => {
+    markedSlow = true;
+    slowInFlight += 1;
+    notifySlowListeners();
+  }, SLOW_API_MS);
+  if (
+    typeof (timer as unknown as { unref?: () => void }).unref === "function"
+  ) {
+    (timer as unknown as { unref: () => void }).unref();
+  }
+  try {
+    return await fetch(`${API_BASE}${path}`, {
+      ...rest,
+      credentials: "include",
+      headers: {
+        ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+        ...(headers ?? {}),
+      },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  } finally {
+    clearTimeout(timer);
+    if (markedSlow) {
+      slowInFlight = Math.max(0, slowInFlight - 1);
+      notifySlowListeners();
+    }
+  }
 }
 
 let refreshInFlight: Promise<boolean> | null = null;

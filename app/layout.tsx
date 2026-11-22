@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
 import { PwaRuntime } from "@/components/pwa/pwa-runtime";
@@ -41,20 +42,11 @@ export const metadata: Metadata = {
     siteName: "Lingo",
     title,
     description,
-    images: [
-      {
-        url: "/themes.png",
-        width: 1672,
-        height: 941,
-        alt: "Lingo — Nền tảng học tiếng Anh",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title,
     description,
-    images: ["/themes.png"],
   },
 };
 
@@ -81,6 +73,7 @@ export default function RootLayout({
         <PwaRuntime />
         <ConnectivityNotice />
         <AuthProvider>{children}</AuthProvider>
+        <Analytics />
       </body>
     </html>
   );

@@ -33,16 +33,19 @@ import type {
   NotebookWord,
   OnboardingProfile,
   Paginated,
+  PlacementQuestion,
   PracticeSkill,
   PracticeStats,
   ProgressOverview,
   PublicProfile,
   QuizAttemptSummary,
+  SentenceEvaluation,
   SkipLessonResult,
   StreakInfo,
   ReferralStats,
   StudyStats,
   SubmitOnboardingInput,
+  SupportFeedbackItem,
   UserSearchResult,
   VideoCard,
   VideoComment,
@@ -448,4 +451,45 @@ export function streamAssistant(
 
 export function deleteAssistantSession(sessionId: string) {
   return api.del<{ ok: true }>(`/assistant/sessions/${sessionId}`);
+}
+
+export function submitSupportFeedback(body: {
+  name: string;
+  email?: string;
+  topic: string;
+  message: string;
+}) {
+  return api.post<{ id: string; status: string; createdAt: string }>(
+    "/support/feedback",
+    body,
+  );
+}
+
+export function useAdminFeedback(status: "ALL" | "OPEN" | "RESOLVED") {
+  return useSWR<{ items: SupportFeedbackItem[]; openCount: number }>(
+    `/admin/feedback?status=${status}`,
+    fetcher,
+  );
+}
+
+export function updateAdminFeedbackStatus(
+  id: string,
+  status: "OPEN" | "RESOLVED",
+) {
+  return api.patch<SupportFeedbackItem>(`/admin/feedback/${id}`, { status });
+}
+
+export function deleteAdminFeedback(id: string) {
+  return api.del<{ deleted: boolean }>(`/admin/feedback/${id}`);
+}
+
+export function fetchPlacementQuiz() {
+  return api.get<{ questions: PlacementQuestion[] }>("/onboarding/placement");
+}
+
+export function evaluateWritingSentence(wordId: string, sentence: string) {
+  return api.post<SentenceEvaluation>("/practice/writing/evaluate", {
+    wordId,
+    sentence,
+  });
 }

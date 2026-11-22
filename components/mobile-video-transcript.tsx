@@ -13,8 +13,10 @@ export function MobileVideoTranscript({
   resumeAt,
   showTrans,
   showCaption,
+  loopLine = false,
   onToggleTrans,
   onToggleCaption,
+  onToggleLoop,
   onSelect,
   onWordClick,
   selectedWord,
@@ -25,8 +27,10 @@ export function MobileVideoTranscript({
   resumeAt: number;
   showTrans: boolean;
   showCaption: boolean;
+  loopLine?: boolean;
   onToggleTrans: () => void;
   onToggleCaption: () => void;
+  onToggleLoop?: () => void;
   onSelect: (index: number) => void;
   onWordClick?: (word: string) => void;
   selectedWord?: string | null;
@@ -91,10 +95,19 @@ export function MobileVideoTranscript({
           </h2>
           <span className="text-muted">Đã học {progress}%</span>
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div
+          className={`grid gap-2 ${onToggleLoop ? "grid-cols-3" : "grid-cols-2"}`}
+        >
           {[
-            { label: "Bản dịch", on: showTrans, toggle: onToggleTrans },
-            { label: "Phụ đề video", on: showCaption, toggle: onToggleCaption },
+            {
+              label: showTrans ? "Ẩn dịch" : "Hiện dịch",
+              on: showTrans,
+              toggle: onToggleTrans,
+            },
+            { label: "Phụ đề", on: showCaption, toggle: onToggleCaption },
+            ...(onToggleLoop
+              ? [{ label: "Lặp câu", on: loopLine, toggle: onToggleLoop }]
+              : []),
           ].map(({ label, on, toggle }) => (
             <button
               key={label}
