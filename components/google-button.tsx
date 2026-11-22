@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { api, ApiError } from "@/lib/api";
 
 const GSI_SRC = "https://accounts.google.com/gsi/client";
-const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
+const CLIENT_ID = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "").trim();
 
 interface CredentialResponse {
   credential?: string;
@@ -13,6 +13,7 @@ interface GoogleAccountsId {
   initialize: (opts: {
     client_id: string;
     callback: (res: CredentialResponse) => void;
+    ux_mode?: "popup" | "redirect";
   }) => void;
   renderButton: (el: HTMLElement, opts: Record<string, unknown>) => void;
 }
@@ -23,6 +24,15 @@ declare global {
 }
 
 let scriptPromise: Promise<void> | null = null;
+let initializedClient = false;
+let activeCredentialHandler: ((res: CredentialResponse) => void) | null = null;
+
+function isEmbeddedWebView(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /FBAN|FBAV|FB_IAB|Messenger|Zalo|Line\/|Instagram|MicroMessenger/i.test(
+    navigator.userAgent,
+  );
+}
 function loadGsi(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   if (window.google?.accounts?.id) return Promise.resolve();
@@ -57,6 +67,11 @@ export function GoogleButton({
   const onSuccessRef = useRef(onSuccess);
   const onErrorRef = useRef(onError);
   const [error, setError] = useState<string | null>(null);
+  const embeddedBrowser = useSyncExternalStore(
+    () => () => undefined,
+    isEmbeddedWebView,
+    () => false,
+  );
 
   useEffect(() => {
     onSuccessRef.current = onSuccess;
@@ -72,35 +87,41 @@ export function GoogleButton({
     let resizeFrame = 0;
     let renderedWidth = 0;
 
+    const handleCredential = (res: CredentialResponse) => {
+      if (cancelled || !res.credential) return;
+      void api
+        .post<{ isNewUser: boolean }>("/auth/google", {
+          idToken: res.credential,
+        })
+        .then((r) => {
+          if (!cancelled) onSuccessRef.current(r.isNewUser);
+        })
+        .catch((e) => {
+          if (cancelled) return;
+          const message =
+            e instanceof ApiError
+              ? e.message
+              : "Đăng nhập Google thất bại";
+          // Hai nút cùng tồn tại khi trượt; lỗi phải hiện ở form đang mở.
+          if (onErrorRef.current) onErrorRef.current(message);
+          else setError(message);
+        });
+    };
+
     void loadGsi()
       .then(() => {
         if (cancelled) return;
         const gid = window.google?.accounts?.id;
         if (!gid) return;
 
-        gid.initialize({
-          client_id: CLIENT_ID,
-          callback: (res) => {
-            if (cancelled || !res.credential) return;
-            void api
-              .post<{ isNewUser: boolean }>("/auth/google", {
-                idToken: res.credential,
-              })
-              .then((r) => {
-                if (!cancelled) onSuccessRef.current(r.isNewUser);
-              })
-              .catch((e) => {
-                if (cancelled) return;
-                const message =
-                  e instanceof ApiError
-                    ? e.message
-                    : "Đăng nhập Google thất bại";
-                // Hai nút cùng tồn tại khi trượt; lỗi phải hiện ở form đang mở.
-                if (onErrorRef.current) onErrorRef.current(message);
-                else setError(message);
-              });
-          },
-        });
+        activeCredentialHandler = handleCredential;
+        if (!initializedClient) {
+          initializedClient = true;
+          gid.initialize({
+            client_id: CLIENT_ID,
+            callback: (res) => activeCredentialHandler?.(res),
+          });
+        }
 
         const render = (availableWidth: number) => {
           const width = Math.min(400, Math.floor(availableWidth));
@@ -151,6 +172,12 @@ export function GoogleButton({
   return (
     <div className="space-y-2">
       <div ref={ref} className="google-button flex w-full justify-center" />
+      {embeddedBrowser && (
+        <p className="text-center text-[11px] leading-5 text-muted">
+          Bạn đang mở trong trình duyệt của ứng dụng (Facebook/Zalo). Nếu bấm
+          Google bị lỗi, hãy chọn <strong>Mở bằng trình duyệt (Chrome/Safari)</strong>.
+        </p>
+      )}
       {error && <p className="text-center text-xs text-danger">{error}</p>}
     </div>
   );
