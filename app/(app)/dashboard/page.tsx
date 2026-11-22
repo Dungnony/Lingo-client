@@ -219,7 +219,7 @@ export default function DashboardPage() {
           ctaLabel={
             current?.startedWords ? "Tiếp tục bài học" : "Bắt đầu học ngay"
           }
-          ctaHref={current ? `/study?lesson=${current.id}` : "/learn"}
+          ctaHref={current ? `/study?lesson=${current.id}&quick=1` : "/learn"}
         />
 
         {onboarding.data === null ? (
@@ -319,18 +319,18 @@ export default function DashboardPage() {
                   <ProgressBar
                     value={
                       current.wordCount
-                        ? (current.learnedWords / current.wordCount) * 100
+                        ? (current.startedWords / current.wordCount) * 100
                         : 0
                     }
                     label="Tiến độ bài hiện tại"
                   />
                   <span className="shrink-0 text-xs text-muted">
-                    {current.learnedWords}/{current.wordCount}
+                    {current.startedWords}/{current.wordCount}
                   </span>
                 </div>
               </div>
               <Link
-                href={`/study?lesson=${current.id}`}
+                href={`/study?lesson=${current.id}&quick=1`}
                 className="motion-button inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-fg"
               >
                 {current.startedWords > 0 ? "Học tiếp bài này" : "Vào bài"}
@@ -520,7 +520,11 @@ export default function DashboardPage() {
         {path.isLoading ? (
           <Spinner />
         ) : path.data?.lessons.length ? (
-          <LessonPath lessons={path.data.lessons} limit={5} />
+          <LessonPath
+            lessons={path.data.lessons}
+            limit={5}
+            currentLessonId={path.data.currentLessonId}
+          />
         ) : !path.error ? (
           <EmptyState
             title="Sẵn sàng cho bài học đầu tiên"

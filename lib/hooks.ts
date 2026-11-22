@@ -25,6 +25,8 @@ import type {
   GrammarLevel,
   GrammarListItem,
   EnglishLevel,
+  FastTrackQuiz,
+  FastTrackSubmitResult,
   LearnPath,
   LessonDetail,
   NotebookTab,
@@ -36,6 +38,7 @@ import type {
   ProgressOverview,
   PublicProfile,
   QuizAttemptSummary,
+  SkipLessonResult,
   StreakInfo,
   ReferralStats,
   StudyStats,
@@ -90,6 +93,24 @@ export function useLearnPath(level?: number) {
 
 export function useLesson(id: string | null) {
   return useSWR<LessonDetail>(id ? `/learn/lessons/${id}` : null, fetcher);
+}
+
+export function skipLesson(lessonId: string) {
+  return api.post<SkipLessonResult>(`/learn/lessons/${lessonId}/skip`);
+}
+
+export function createFastTrackQuiz(lessonIds: string[]) {
+  return api.post<FastTrackQuiz>("/learn/fast-track/quiz", { lessonIds });
+}
+
+export function submitFastTrackQuiz(
+  attemptId: string,
+  answers: { wordId: string; chosen: string }[],
+) {
+  return api.post<FastTrackSubmitResult>("/learn/fast-track/submit", {
+    attemptId,
+    answers,
+  });
 }
 
 export function useWords(params: {

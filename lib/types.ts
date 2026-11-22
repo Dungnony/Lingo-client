@@ -86,6 +86,38 @@ export interface LessonDetail {
   words: Word[];
 }
 
+export interface SkipLessonResult {
+  lessonId: string;
+  skippedWords: number;
+  totalWords: number;
+  nextLessonId: string | null;
+}
+
+export interface FastTrackQuestion {
+  wordId: string;
+  prompt: string;
+  pronunciation: string | null;
+  options: string[];
+  answer: string;
+}
+
+export interface FastTrackQuiz {
+  attemptId: string;
+  lessonIds: string[];
+  passThresholdPct: number;
+  questions: FastTrackQuestion[];
+}
+
+export interface FastTrackSubmitResult {
+  passed: boolean;
+  scorePct: number;
+  correctCount: number;
+  totalQuestions: number;
+  passThresholdPct: number;
+  completedLessons: number;
+  skippedWords: number;
+}
+
 export interface WordExample {
   id: string;
   en: string;

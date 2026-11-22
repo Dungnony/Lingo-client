@@ -19,28 +19,29 @@ import {
   Spinner,
 } from "@/components/ui";
 import { useRequireAuth } from "@/lib/auth";
-import { useLearnPath } from "@/lib/hooks";
+import { skipLesson, useLearnPath } from "@/lib/hooks";
+import { groupLessonsByTopic } from "@/lib/learn-topics";
 import { isValidLevel, levelLabel } from "@/lib/levels";
 import styles from "./learn.module.css";
 
 const LEARN_TOUR_STEPS: TourStep[] = [
   {
     icon: "route",
-    title: "Chọn cấp độ",
+    title: "Chọn cấp độ phù hợp",
     description:
-      "Chuyển giữa 6 cấp (Beginner → Advanced) để xem lộ trình bài học riêng của từng cấp — cấp đề xuất dựa trên khảo sát ban đầu của bạn đã được chọn sẵn.",
+      "Chuyển tự do giữa 6 cấp (Beginner → Advanced) bất cứ lúc nào — cấp đề xuất từ khảo sát ban đầu đã được mở sẵn.",
   },
   {
     icon: "spark",
-    title: "Sáu chặng học tiếng Anh",
+    title: "Học theo chủ đề & Vượt nhanh",
     description:
-      "Bảng chữ cái & phiên âm, phát âm, từ vựng, ngữ pháp, rồi nghe & nói. Bấm vào từng chặng để xem tổng quan cách Lingo dẫn dắt bạn.",
+      "Các bài học được gom theo từng chủ đề và mở khóa sẵn hoàn toàn. Tự do chọn chủ đề muốn học hoặc bấm \"Vượt nhanh\" (5 câu) để qua các phần bạn đã biết.",
   },
   {
     icon: "cards",
-    title: "Bài học theo chủ đề",
+    title: "Vào thẳng Flashcard trong 1 chạm",
     description:
-      "Mỗi cấp chia thành nhiều bài theo chủ đề thực tế (chào hỏi, gia đình...). Hoàn thành bài này để mở bài tiếp theo, hoặc bấm \"Ôn tập hôm nay\" để ôn flashcard.",
+      "Bấm \"Học flashcard ngay\" để vào luyện thẻ ghi nhớ tức thì, hoặc bấm \"Đã biết\" để đi tiếp sang bài kế tiếp.",
   },
 ];
 
@@ -48,6 +49,8 @@ function LearnContent({ initialLevel }: { initialLevel?: number }) {
   const { user, loading } = useRequireAuth();
   const [level, setLevel] = useState<number | undefined>(initialLevel);
   const { data, isLoading, error, mutate } = useLearnPath(level);
+  const [skippingHero, setSkippingHero] = useState(false);
+  const [heroError, setHeroError] = useState<string | null>(null);
 
   if (loading || !user) return <Spinner />;
 
@@ -59,18 +62,32 @@ function LearnContent({ initialLevel }: { initialLevel?: number }) {
       )
     : 0;
   const currentLesson =
-    data?.lessons.find(
-      (lesson) =>
-        lesson.id === data.currentLessonId && lesson.status !== "LOCKED",
-    ) ??
+    data?.lessons.find((lesson) => lesson.id === data.currentLessonId) ??
     data?.lessons.find(
       (lesson) =>
         lesson.status === "IN_PROGRESS" || lesson.status === "AVAILABLE",
     );
   const totalWords =
     data?.lessons.reduce((total, lesson) => total + lesson.wordCount, 0) ?? 0;
+  const topicCount = data?.lessons
+    ? groupLessonsByTopic(data.lessons).length
+    : 0;
   // Giữ bố cục khi đổi cấp, chặn bài cũ đến khi dữ liệu mới tải xong.
   const switchingLevel = isLoading && !!data;
+
+  async function handleSkipCurrent() {
+    if (!currentLesson || skippingHero) return;
+    setSkippingHero(true);
+    setHeroError(null);
+    try {
+      await skipLesson(currentLesson.id);
+      await mutate();
+    } catch {
+      setHeroError("Chưa bỏ qua được bài này. Bạn thử lại nhé.");
+    } finally {
+      setSkippingHero(false);
+    }
+  }
 
   return (
     <div className={`page-wrap ${styles.page}`}>
@@ -78,8 +95,8 @@ function LearnContent({ initialLevel }: { initialLevel?: number }) {
       <PageHeading
         icon="route"
         eyebrow="Lộ trình học"
-        title="Từng bước nhỏ, tiến bộ mỗi ngày"
-        description="Chọn cấp độ của bạn. Học một bài mới, ôn một chút và tiến thêm một bước."
+        title="Học đúng tốc độ của bạn"
+        description="Mọi chủ đề đều mở sẵn. Học từng bước hoặc vượt nhanh qua những phần bạn đã quen thuộc."
       >
         <LinkButton href="/study" variant="secondary">
           <Icon name="cards" size={17} /> Ôn tập hôm nay
@@ -105,26 +122,45 @@ function LearnContent({ initialLevel }: { initialLevel?: number }) {
             </h2>
             <p>
               {currentLesson
-                ? `${currentLesson.wordCount} từ vựng mới đang chờ bạn. Tiếp tục từ nơi bạn đã dừng lại.`
+                ? `${currentLesson.wordCount} từ vựng trong bài này. Vào thẳng flashcard hoặc đánh dấu đã biết để đi nhanh hơn.`
                 : "Ôn lại những từ đã học hoặc chọn một cấp độ mới để tiếp tục khám phá."}
             </p>
+            {currentLesson && currentLesson.previewWords.length > 0 && (
+              <p lang="en" className={`mt-2 word-display ${styles.previewWords}`}>
+                {currentLesson.previewWords.slice(0, 4).join(" · ")}
+              </p>
+            )}
             <div className={styles.continueActions}>
               <LinkButton
-                href={currentLesson ? `/learn/${currentLesson.id}` : "/study"}
+                href={
+                  currentLesson
+                    ? `/study?lesson=${currentLesson.id}&quick=1`
+                    : "/study"
+                }
               >
-                {currentLesson
-                  ? currentLesson.status === "IN_PROGRESS"
-                    ? "Tiếp tục bài học"
-                    : "Bắt đầu bài học"
-                  : "Ôn lại từ đã học"}
+                {currentLesson ? "Học flashcard ngay" : "Ôn lại từ đã học"}
                 <Icon name="arrow" size={16} />
               </LinkButton>
               {currentLesson && (
-                <span lang="en" className={`word-display ${styles.previewWords}`}>
-                  {currentLesson.previewWords.slice(0, 4).join(" · ")}
-                </span>
+                <>
+                  <LinkButton
+                    href={`/learn/${currentLesson.id}`}
+                    variant="secondary"
+                  >
+                    <Icon name="book" size={16} /> Xem danh sách từ
+                  </LinkButton>
+                  <Button
+                    variant="ghost"
+                    disabled={skippingHero}
+                    onClick={() => void handleSkipCurrent()}
+                  >
+                    <Icon name="check" size={16} />
+                    {skippingHero ? "Đang bỏ qua…" : "Đã biết · Qua bài này"}
+                  </Button>
+                </>
               )}
             </div>
+            {heroError && <p className="mt-2 text-xs text-danger">{heroError}</p>}
           </div>
           <div className={styles.progressTile}>
             <div
@@ -151,14 +187,12 @@ function LearnContent({ initialLevel }: { initialLevel?: number }) {
         </section>
       )}
 
-      <LearningJourney />
-
       <section aria-labelledby="level-lessons-heading" className={styles.course}>
         <SectionHeading
           id="level-lessons-heading"
           icon="route"
           title="Lộ trình theo cấp độ"
-          description="Hoàn thành từng bài để mở bước tiếp theo."
+          description="Chọn chủ đề muốn học, hoặc làm 5 câu kiểm tra nhanh để vượt qua phần bạn đã biết."
         >
           {!!data?.levels.length && (
             <SelectionGroup
@@ -180,6 +214,33 @@ function LearnContent({ initialLevel }: { initialLevel?: number }) {
             </SelectionGroup>
           )}
         </SectionHeading>
+
+        {data && !error && data.lessons.length > 0 && (
+          <div className={styles.fastTrackBanner}>
+            <p className="flex items-start gap-2.5 text-xs leading-5 text-muted sm:items-center">
+              <Icon
+                name="spark"
+                size={16}
+                className="mt-0.5 shrink-0 text-primary sm:mt-0"
+              />
+              <span>
+                Mấy bài đầu quá dễ? Tự do chọn bất kỳ chủ đề nào, bấm{" "}
+                <strong className="text-foreground">Vượt nhanh</strong> (5 câu)
+                để qua cả chủ đề, hoặc chuyển thẳng lên cấp độ cao hơn.
+              </span>
+            </p>
+            {data.level < 6 && (
+              <Button
+                variant="secondary"
+                onClick={() => setLevel(data.level + 1)}
+                className="min-h-9! shrink-0 px-3! py-1.5! text-xs!"
+              >
+                Chuyển sang Level {data.level + 1}
+                <Icon name="arrow" size={14} />
+              </Button>
+            )}
+          </div>
+        )}
 
         {error ? (
           <Card className="space-y-4">
@@ -221,9 +282,15 @@ function LearnContent({ initialLevel }: { initialLevel?: number }) {
                   <span>
                     <Icon name="book" size={16} /> {data.levelName}
                   </span>
-                  <span>{data.totalLessons} bài học</span>
+                  <span>
+                    {topicCount} chủ đề · {data.totalLessons} bài học
+                  </span>
                 </div>
-                <LessonPath lessons={data.lessons} />
+                <LessonPath
+                  lessons={data.lessons}
+                  currentLessonId={data.currentLessonId}
+                  onMutate={mutate}
+                />
               </div>
               <aside className={styles.sidebar}>
                 <Card>
@@ -257,10 +324,11 @@ function LearnContent({ initialLevel }: { initialLevel?: number }) {
                     <Icon name="spark" size={20} />
                   </span>
                   <div>
-                    <h3>Một chút mỗi ngày</h3>
+                    <h3>Tăng tốc linh hoạt</h3>
                     <p>
-                      Nghe phát âm, đọc ví dụ rồi thử nhớ nghĩa. Ôn lại các từ
-                      đến hạn để nhớ lâu hơn.
+                      Bấm <strong>Đã biết</strong> ở từng bài hoặc làm 5 câu{" "}
+                      <strong>Vượt nhanh</strong> ở từng chủ đề để đi thẳng tới
+                      phần từ vựng mới với bạn.
                     </p>
                   </div>
                 </div>
@@ -276,6 +344,8 @@ function LearnContent({ initialLevel }: { initialLevel?: number }) {
           </div>
         )}
       </section>
+
+      <LearningJourney />
     </div>
   );
 }

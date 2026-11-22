@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { AudioButton } from "@/components/audio-button";
 import { Icon } from "@/components/icon";
@@ -17,16 +17,19 @@ import {
 } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { useRequireAuth } from "@/lib/auth";
-import { useLesson } from "@/lib/hooks";
+import { skipLesson, useLesson } from "@/lib/hooks";
 import { levelLabel } from "@/lib/levels";
 import { posLabel } from "@/lib/pos-labels";
 
 export default function LessonDetailPage() {
   const { user, loading } = useRequireAuth();
+  const router = useRouter();
   const { lessonId } = useParams<{ lessonId: string }>();
   const { data, isLoading, error, mutate } = useLesson(lessonId);
   const [tab, setTab] = useState<"words" | "examples">("words");
   const [showMeanings, setShowMeanings] = useState(true);
+  const [skipping, setSkipping] = useState(false);
+  const [skipError, setSkipError] = useState<string | null>(null);
 
   if (loading || !user) return <Spinner />;
   if (error)
@@ -55,9 +58,26 @@ export default function LessonDetailPage() {
     })),
   );
 
+  async function handleSkip() {
+    if (skipping) return;
+    setSkipping(true);
+    setSkipError(null);
+    try {
+      const res = await skipLesson(lesson.id);
+      if (res.nextLessonId) {
+        router.push(`/study?lesson=${res.nextLessonId}&quick=1`);
+      } else {
+        router.push(`/learn?level=${lesson.level}`);
+      }
+    } catch {
+      setSkipError("Chưa bỏ qua được bài này. Bạn thử lại nhé.");
+      setSkipping(false);
+    }
+  }
+
   return (
     <div className="page-wrap space-y-6">
-      <LinkButton href="/learn" variant="ghost" className="-ml-4">
+      <LinkButton href={`/learn?level=${lesson.level}`} variant="ghost" className="-ml-4">
         <Icon name="back" size={16} /> Lộ trình học{" "}
         <span className="px-1 text-border">/</span> Level {lesson.level}
       </LinkButton>
@@ -67,12 +87,23 @@ export default function LessonDetailPage() {
         title={lesson.title}
         description="Làm quen với từ mới, lắng nghe cách đọc và khám phá cách dùng trong từng ví dụ."
       >
-        {words.length > 0 && (
-          <LinkButton href={`/study?lesson=${lesson.id}`}>
-            <Icon name="play" size={16} /> Bắt đầu học
-          </LinkButton>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {words.length > 0 && (
+            <LinkButton href={`/study?lesson=${lesson.id}&quick=1`}>
+              <Icon name="play" size={16} /> Bắt đầu học
+            </LinkButton>
+          )}
+          <Button
+            variant="secondary"
+            disabled={skipping}
+            onClick={() => void handleSkip()}
+          >
+            <Icon name="check" size={16} />
+            {skipping ? "Đang bỏ qua…" : "Đã biết hết · Qua bài"}
+          </Button>
+        </div>
       </PageHeading>
+      {skipError && <ErrorNote>{skipError}</ErrorNote>}
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
         <section className="min-w-0 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-2">
@@ -250,12 +281,21 @@ export default function LessonDetailPage() {
             </dl>
             {words.length > 0 && (
               <LinkButton
-                href={`/study?lesson=${lesson.id}`}
+                href={`/study?lesson=${lesson.id}&quick=1`}
                 className="mt-5 w-full"
               >
                 <Icon name="cards" size={17} /> Học với flashcard
               </LinkButton>
             )}
+            <Button
+              variant="secondary"
+              disabled={skipping}
+              onClick={() => void handleSkip()}
+              className="mt-2.5 w-full"
+            >
+              <Icon name="check" size={16} />
+              {skipping ? "Đang bỏ qua…" : "Đã biết hết · Qua bài"}
+            </Button>
           </Card>
           <div className="rounded-2xl border border-primary/15 bg-primary/4 p-5">
             <p className="flex items-center gap-2 text-sm font-semibold text-primary">

@@ -24,13 +24,34 @@ interface Item {
   isNew: boolean;
 }
 
+async function postReviewWithRetry(body: {
+  wordId: string;
+  rating: Rating;
+  durationMs: number;
+  studySessionId?: string;
+}): Promise<boolean> {
+  try {
+    await api.post<{ isCorrect: boolean }>("/study/review", body);
+    return true;
+  } catch {
+    try {
+      await api.post<{ isCorrect: boolean }>("/study/review", body);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
 function StudyInner({
   lessonId,
   notebook,
+  quick,
 }: {
   lessonId: string | null;
   /** Review only the words saved in the notebook. */
   notebook: boolean;
+  quick: boolean;
 }) {
   const { user, loading } = useRequireAuth();
   const lesson = useLesson(lessonId);
@@ -42,6 +63,8 @@ function StudyInner({
   const [correct, setCorrect] = useState(0);
   const sessionId = useRef<string | null>(null);
   const reviewedIds = useRef<Set<string>>(new Set());
+  const pendingReviews = useRef<Promise<void>[]>([]);
+  const saveFailures = useRef(0);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [quizScore, setQuizScore] = useState<number | null>(null);
   const started = useRef(false);
@@ -71,46 +94,54 @@ function StudyInner({
         ...queue.newCards.map((n) => ({ word: n.word, isNew: true })),
       ];
       setItems(list);
-      setPhase(list.length ? "intro" : "review-done");
+      setPhase(list.length ? (quick ? "review" : "intro") : "review-done");
     })().catch(() => setError("Chưa tải được buổi học. Vui lòng thử lại."));
-  }, [loading, user, lessonId, notebook]);
+  }, [loading, user, lessonId, notebook, quick]);
 
   const onRate = useCallback(
     async (rating: Rating, durationMs: number) => {
       const item = items[pos];
-      if (!item || ratingLock.current) return;
-      ratingLock.current = true;
-      setBusy(true);
-      setError(null);
-      try {
-        const res = await api.post<{ isCorrect: boolean }>("/study/review", {
-          wordId: item.word.id,
-          rating,
-          durationMs,
-          studySessionId: sessionId.current ?? undefined,
-        });
-        reviewedIds.current.add(item.word.id);
-        if (res.isCorrect) setCorrect((c) => c + 1);
-      } catch {
-        setError("Chưa lưu được kết quả. Hãy thử đánh giá lại thẻ này.");
-        ratingLock.current = false;
-        setBusy(false);
+      if (!item || ratingLock.current || reviewedIds.current.has(item.word.id)) {
         return;
       }
+      reviewedIds.current.add(item.word.id);
+      if (rating !== "AGAIN") setCorrect((c) => c + 1);
+      setError(null);
+
+      const req = postReviewWithRetry({
+        wordId: item.word.id,
+        rating,
+        durationMs,
+        studySessionId: sessionId.current ?? undefined,
+      }).then((ok) => {
+        if (!ok) saveFailures.current += 1;
+      });
+      pendingReviews.current.push(req);
+
       if (pos + 1 < items.length) {
         setPos(pos + 1);
-      } else {
-        if (sessionId.current) {
-          await api
-            .post(`/study/session/${sessionId.current}/end`)
-            .catch(() => undefined);
-        }
-        setPhase("review-done");
+        return;
       }
+
+      ratingLock.current = true;
+      setBusy(true);
+      await Promise.allSettled(pendingReviews.current);
+      if (saveFailures.current > 0) {
+        setError(
+          `Có ${saveFailures.current} thẻ chưa lưu được kết quả do lỗi mạng.`,
+        );
+      }
+      if (sessionId.current) {
+        await api
+          .post(`/study/session/${sessionId.current}/end`)
+          .catch(() => undefined);
+      }
+      void path.mutate();
+      setPhase("review-done");
       ratingLock.current = false;
       setBusy(false);
     },
-    [items, pos],
+    [items, path, pos],
   );
 
   async function startQuiz() {
@@ -159,9 +190,7 @@ function StudyInner({
     !path.error &&
     path.data.level === lesson.data.lesson.level
       ? path.data.lessons.find(
-          (l) =>
-            l.orderIndex === lesson.data!.lesson.orderIndex + 1 &&
-            l.status !== "LOCKED",
+          (l) => l.orderIndex === lesson.data!.lesson.orderIndex + 1,
         )
       : undefined;
 
@@ -346,6 +375,9 @@ function StudyInner({
                 <kbd>Space</kbd> Lật thẻ
               </span>
               <span>
+                <kbd>E</kbd> Biết chắc · Qua nhanh
+              </span>
+              <span>
                 <kbd>1</kbd> – <kbd>4</kbd> Chọn mức nhớ
               </span>
             </div>
@@ -395,23 +427,23 @@ function StudyInner({
             </div>
           )}
           <div className={styles.finishActions}>
+            {nextLesson && (
+              <LinkButton
+                href={`/study?lesson=${nextLesson.id}&quick=1`}
+                className="w-full"
+              >
+                Bài tiếp theo: {nextLesson.title} <Icon name="arrow" size={16} />
+              </LinkButton>
+            )}
             {items.length >= 4 && (
               <Button
+                variant={nextLesson ? "secondary" : "primary"}
                 className="w-full"
                 disabled={busy}
                 onClick={() => void startQuiz()}
               >
                 {busy ? "Đang tạo…" : "Kiểm tra nhanh những từ vừa học"}
               </Button>
-            )}
-            {nextLesson && (
-              <LinkButton
-                href={`/study?lesson=${nextLesson.id}`}
-                variant="secondary"
-                className="w-full"
-              >
-                {nextLesson.title} <Icon name="arrow" size={16} />
-              </LinkButton>
             )}
             <LinkButton href={back.href} variant="ghost" className="w-full">
               {back.finish}
@@ -456,10 +488,10 @@ function StudyInner({
           <div className={styles.finishActions}>
             {nextLesson ? (
               <LinkButton
-                href={`/study?lesson=${nextLesson.id}`}
+                href={`/study?lesson=${nextLesson.id}&quick=1`}
                 className="w-full"
               >
-                {nextLesson.title} <Icon name="arrow" size={16} />
+                Bài tiếp theo: {nextLesson.title} <Icon name="arrow" size={16} />
               </LinkButton>
             ) : (
               <LinkButton href={back.href} className="w-full">
@@ -477,11 +509,13 @@ function StudySession() {
   const params = useSearchParams();
   const lessonId = params.get("lesson");
   const notebook = !lessonId && params.get("notebook") === "1";
+  const quick = params.get("quick") === "1";
   return (
     <StudyInner
-      key={lessonId ?? (notebook ? "notebook" : "review")}
+      key={`${lessonId ?? (notebook ? "notebook" : "review")}:${quick ? "1" : "0"}`}
       lessonId={lessonId}
       notebook={notebook}
+      quick={quick}
     />
   );
 }

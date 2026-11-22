@@ -94,6 +94,10 @@ export function Flashcard({
         e.preventDefault();
         reveal();
       }
+      if (!revealed && !busy && e.key.toLowerCase() === "e") {
+        e.preventDefault();
+        onRate("EASY", Date.now() - start);
+      }
       const rating = RATINGS[Number(e.key) - 1];
       if (revealed && !busy && rating) {
         e.preventDefault();
@@ -205,6 +209,22 @@ export function Flashcard({
             ? "Bạn nhớ từ này đến đâu?"
             : "Thử nhớ nghĩa, rồi lật thẻ để tự đánh giá"}
         </p>
+        {!revealed && (
+          <div className="mb-3 flex justify-center">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onRate("EASY", Date.now() - start)}
+              className="motion-button inline-flex min-h-9 items-center gap-2 rounded-xl border border-good/25 bg-good/8 px-3.5 py-1.5 text-xs font-semibold text-good transition-colors hover:bg-good/14 disabled:opacity-50"
+            >
+              <Icon name="check" size={14} />
+              Biết chắc từ này · Qua nhanh
+              <kbd className="rounded border border-good/25 px-1.5 py-0.5 text-[10px] opacity-80">
+                E
+              </kbd>
+            </button>
+          </div>
+        )}
         <div className={styles.ratings}>
           {RATINGS.map((r, i) => (
             <button
